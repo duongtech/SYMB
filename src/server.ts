@@ -15,7 +15,8 @@ import {
   CryptoScanInputSchema,
   ProtectionsScanInputSchema,
   DecompileApkInputSchema,
-  DecryptStringsInputSchema
+  DecryptStringsInputSchema,
+  DecompileIosInputSchema
 } from "./contracts/schemas.js";
 import { runUnflatten } from "./core/unflatten.js";
 import { runBranchSolver } from "./core/solver.js";
@@ -28,6 +29,7 @@ import { runCryptoScan } from "./core/crypto.js";
 import { runProtectionsScan } from "./core/protections.js";
 import { runApkDecompile } from "./core/apk.js";
 import { runStringDecrypt } from "./core/strings_decrypt.js";
+import { runIosDecompile } from "./core/ios.js";
 
 export function createSymbServer(): Server {
   const server = new Server(
@@ -46,6 +48,18 @@ export function createSymbServer(): Server {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
+        {
+          name: "decompile_ios_ipa_package",
+          description:
+            "Decompiles Apple iOS IPA packages and ARM64 Mach-O binaries. Audits Info.plist entitlements/permissions, checks FairPlay DRM encryption (cryptid), detects Anti-Jailbreak heuristics (Cydia, ptrace PT_DENY_ATTACH), and reconstructs Objective-C/Swift class interface headers.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              target_path: { type: "string", description: "Absolute path to iOS IPA (.ipa) or ARM64 Mach-O executable" }
+            },
+            required: ["target_path"]
+          }
+        },
         {
           name: "decompile_apk_package",
           description:
@@ -207,6 +221,14 @@ export function createSymbServer(): Server {
 
     try {
       switch (name) {
+        case "decompile_ios_ipa_package": {
+          const parsed = DecompileIosInputSchema.parse(args);
+          const result = await runIosDecompile(parsed.target_path);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
         case "decompile_apk_package": {
           const parsed = DecompileApkInputSchema.parse(args);
           const result = await runApkDecompile(parsed.target_path, parsed.max_classes);

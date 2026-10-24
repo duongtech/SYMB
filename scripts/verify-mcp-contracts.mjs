@@ -12,12 +12,18 @@ import {
   CryptoScanInputSchema,
   ProtectionsScanInputSchema,
   DecompileApkInputSchema,
-  DecryptStringsInputSchema
+  DecryptStringsInputSchema,
+  DecompileIosInputSchema
 } from "../dist/contracts/schemas.js";
 
 console.log(chalk.cyan.bold("\n📜 SYMB MCP TOOL SCHEMAS & CANONICAL EVIDENCE CONTRACTS VERIFICATION\n"));
 
 const schemas = [
+  {
+    name: "decompile_ios_ipa_package Schema",
+    schema: DecompileIosInputSchema,
+    sampleValid: { target_path: "app.ipa" }
+  },
   {
     name: "decompile_apk_package Schema",
     schema: DecompileApkInputSchema,
@@ -91,7 +97,7 @@ for (const s of schemas) {
 
 console.log("\n" + "─".repeat(50));
 if (allPassed) {
-  console.log(chalk.green.bold("★ ALL 11 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
+  console.log(chalk.green.bold("★ ALL 12 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
   process.exit(0);
 } else {
   console.log(chalk.red.bold("✖ MCP Schema verification errors encountered\n"));

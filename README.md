@@ -146,10 +146,11 @@ npx symb-agents setup
 
 ## 🛠️ MCP Tool Reference
 
-SYMB implements 11 high-speed native reversing tools via standard MCP JSON-RPC:
+SYMB implements 12 high-speed native reversing tools via standard MCP JSON-RPC:
 
 | Tool Name | Key Arguments | Primary Capability |
 | :--- | :--- | :--- |
+| `decompile_ios_ipa_package` | `target_path` | Decompiles Apple iOS IPA packages & ARM64 Mach-O binaries. Audits FairPlay DRM (cryptid), Anti-Jailbreak hooks, and reconstructs Objective-C / Swift interfaces |
 | `decompile_apk_package` | `target_path`, `max_classes` | Decompiles Android APK and DEX files in milliseconds. Extracts manifest permissions, audits native .so libraries, and lifts Dalvik bytecode to Java classes |
 | `decrypt_obfuscated_strings` | `binary_path`, `max_candidates` | Automated string deobfuscation engine. Solves Single-byte XOR, Multi-byte cycling XOR, Rolling Key XOR, and Base64 across PE, ELF, APK, and .so binaries |
 | `decompile_native_function` | `binary_path`, `function_address`, `max_instructions` | Decompiles machine code to clean C pseudocode in < 400ms with Capstone, resolving string XREFs, condition branching, and IAT/PLT stubs |
@@ -174,6 +175,9 @@ symb decompile ./examples/02_smt_crackme/ais3_crackme 0x4005f6
 
 # Translate an entire binary to a unified C project file
 symb decompile-all ./examples/02_smt_crackme/ais3_crackme --limit 10
+
+# Decompile Apple iOS IPA package / ARM64 Mach-O, check FairPlay DRM and Anti-Jailbreak
+symb ipa ./examples/05_ios_sample/sample_protected.ipa
 
 # Decompile Android APK package, audit permissions, and reconstruct Java
 symb apk ./examples/04_apk_sample/sample_protected.apk

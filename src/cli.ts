@@ -11,6 +11,7 @@ import { runProtectionsScan } from "./core/protections.js";
 import { runUnflatten } from "./core/unflatten.js";
 import { runApkDecompile } from "./core/apk.js";
 import { runStringDecrypt } from "./core/strings_decrypt.js";
+import { runIosDecompile } from "./core/ios.js";
 
 const program = new Command();
 
@@ -204,6 +205,29 @@ program
       const res = await runStringDecrypt(binary, parseInt(options.maxCandidates, 10));
       console.log(chalk.green(`✔ Recovered ${res.total_encrypted_strings_recovered} encrypted strings, ${res.total_base64_strings_decoded} Base64 strings\n`));
       console.log(JSON.stringify(res, null, 2));
+    } catch (e: any) {
+      console.error(chalk.red(`Error: ${e.message}`));
+    }
+  });
+
+program
+  .command("ipa <target>")
+  .description("Decompile Apple iOS IPA packages / ARM64 Mach-O, check FairPlay DRM and Anti-Jailbreak")
+  .action(async (target) => {
+    console.log(chalk.cyan(`\n🍏 Decompiling Apple iOS IPA / Mach-O: ${target}...`));
+    try {
+      const res = await runIosDecompile(target);
+      console.log(chalk.green(`✔ Bundle ID: ${res.bundle_id}`));
+      console.log(chalk.green(`✔ Permissions (${res.permissions_count}):`), res.permissions);
+      console.log(chalk.green(`✔ Architecture: ${res.macho_analysis?.architecture}`));
+      console.log(chalk.yellow(`DRM Encrypted (cryptid): ${res.macho_analysis?.crypt_id} (${res.macho_analysis?.fairplay_drm_encrypted ? "FairPlay Active" : "Decrypted/Cracked"})`));
+      if (res.macho_analysis?.jailbreak_detection_alerts?.length) {
+        console.log(chalk.red.bold(`⚠ Jailbreak Detection Alerts:`), res.macho_analysis.jailbreak_detection_alerts);
+      }
+      if (res.macho_analysis?.imported_frameworks?.length) {
+        console.log(chalk.cyan(`Imported Frameworks:`), res.macho_analysis.imported_frameworks);
+      }
+      console.log(chalk.bold.white("\nReconstructed Objective-C / Swift Interface:\n" + res.reconstructed_objc_header));
     } catch (e: any) {
       console.error(chalk.red(`Error: ${e.message}`));
     }

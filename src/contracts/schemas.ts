@@ -58,3 +58,7 @@ export const DecryptStringsInputSchema = z.object({
   binary_path: z.string().describe("Absolute path to target binary (PE, ELF, APK, .so)"),
   max_candidates: z.number().default(20).describe("Maximum number of decrypted candidate strings to return")
 });
+
+export const DecompileIosInputSchema = z.object({
+  target_path: z.string().describe("Absolute path to Apple iOS IPA (.ipa) or 64-bit Mach-O executable")
+});
