@@ -61,3 +61,5 @@ test_bins/
 samples/*.dump
 decoded_*.txt
 latest_user_prompt.txt
+examples/04_apk_sample/*.apk
+!examples/04_apk_sample/sample_protected.apk
