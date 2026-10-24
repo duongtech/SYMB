@@ -8,12 +8,18 @@ import {
   UnflattenInputSchema,
   SolveBranchInputSchema,
   TaintInputSchema,
-  HotPatchInputSchema
+  HotPatchInputSchema,
+  DecompileInputSchema,
+  InspectLayoutInputSchema,
+  CryptoScanInputSchema
 } from "./contracts/schemas.js";
 import { runUnflatten } from "./core/unflatten.js";
 import { runBranchSolver } from "./core/solver.js";
 import { runTaintAnalysis } from "./core/taint.js";
 import { runHotPatch } from "./core/trampoline.js";
+import { runDecompile } from "./core/decompile.js";
+import { runInspectLayout } from "./core/layout.js";
+import { runCryptoScan } from "./core/crypto.js";
 
 export function createSymbServer(): Server {
   const server = new Server(
@@ -32,6 +38,44 @@ export function createSymbServer(): Server {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
+        {
+          name: "decompile_native_function",
+          description:
+            "Decompiles native machine code into clean C pseudocode in milliseconds. Disassembles basic blocks, extracts string references (.rdata XREFs), and reconstructs branch conditions across Windows PE and Linux ELF.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to binary (PE/EXE, ELF, Mach-O)" },
+              function_address: { type: "string", description: "Function hex address (e.g. '0x1400014e0') or entry point" },
+              max_instructions: { type: "number", default: 250, description: "Maximum instruction count to lift" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "inspect_binary_layout",
+          description:
+            "Scans binary headers (PE/ELF), mitigations (ASLR, DEP/NX, SafeSEH, CFG), imported/exported DLL functions, and measures Shannon entropy per section to detect UPX, Themida, and VMProtect packing.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "detect_crypto_primitives",
+          description:
+            "Scans binary bytes to detect cryptographic primitives, including AES S-Boxes, SHA-256 / MD5 constants, CRC32 tables, RC4 KSA loops, and ChaCha20 schedules for automated SMT inversion.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary" }
+            },
+            required: ["binary_path"]
+          }
+        },
         {
           name: "unflatten_control_flow",
           description:
@@ -99,16 +143,35 @@ export function createSymbServer(): Server {
     const { name, arguments: args } = request.params;
 
     try {
+      if (name === "decompile_native_function") {
+        const parsed = DecompileInputSchema.parse(args);
+        const evidence = await runDecompile(parsed.binary_path, parsed.function_address, parsed.max_instructions);
+        return {
+          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
+        };
+      }
+
+      if (name === "inspect_binary_layout") {
+        const parsed = InspectLayoutInputSchema.parse(args);
+        const evidence = await runInspectLayout(parsed.binary_path);
+        return {
+          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
+        };
+      }
+
+      if (name === "detect_crypto_primitives") {
+        const parsed = CryptoScanInputSchema.parse(args);
+        const evidence = await runCryptoScan(parsed.binary_path);
+        return {
+          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
+        };
+      }
+
       if (name === "unflatten_control_flow") {
         const parsed = UnflattenInputSchema.parse(args);
         const evidence = await runUnflatten(parsed.binary_path, parsed.function_address, parsed.timeout_seconds);
         return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(evidence, null, 2)
-            }
-          ]
+          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
         };
       }
 
@@ -121,12 +184,7 @@ export function createSymbServer(): Server {
           parsed.input_length
         );
         return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(evidence, null, 2)
-            }
-          ]
+          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
         };
       }
 
@@ -134,12 +192,7 @@ export function createSymbServer(): Server {
         const parsed = TaintInputSchema.parse(args);
         const evidence = await runTaintAnalysis(parsed.binary_path, parsed.source_symbol, parsed.sink_symbol);
         return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(evidence, null, 2)
-            }
-          ]
+          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
         };
       }
 
@@ -152,12 +205,7 @@ export function createSymbServer(): Server {
           parsed.expected_original_bytes
         );
         return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(evidence, null, 2)
-            }
-          ]
+          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
         };
       }
 

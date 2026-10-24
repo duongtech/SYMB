@@ -146,14 +146,16 @@ npx symb-agents setup
 
 ## 🛠️ Danh Mục Công Cụ MCP
 
-SYMB cung cấp 5 công cụ biểu trưng cốt lõi qua giao thức chuẩn MCP:
+SYMB cung cấp bộ 7 công cụ dịch ngược và giải bài toán biểu trưng cốt lõi qua giao thức chuẩn MCP:
 
 | Tên công cụ | Tham số chính | Chức năng cốt lõi |
 | :--- | :--- | :--- |
+| `decompile_native_function` | `binary_path`, `function_address`, `max_instructions` | Dịch ngược mã máy sang C Pseudocode siêu tốc bằng Capstone (.rdata XREFs) |
+| `inspect_binary_layout` | `binary_path` | Quét cấu trúc PE/ELF, các cơ chế ASLR/DEP, bảng import IAT, và entropy section |
+| `detect_crypto_primitives` | `binary_path` | Tầm soát S-Box AES, hằng số SHA/MD5, bảng CRC32, ChaCha cho bài toán nghịch đảo |
 | `unflatten_control_flow` | `binary_path`, `function_address`, `arch` | Gỡ rối OLLVM switch dispatcher, khôi phục CFG sạch |
 | `solve_branch_reachability` | `target_address`, `avoid_addresses`, `symbolic_vars` | Dùng Z3 giải chính xác dữ liệu đầu vào kích hoạt nhánh đích |
 | `trace_symbolic_taint` | `source_address`, `sink_address`, `taint_var` | Kiểm tra luồng dữ liệu từ input không tin cậy tới memory sink |
-| `devirtualize_bytecode_vm` | `vm_entry_address`, `bytecode_offset` | Dịch ngược mã byte máy ảo tùy biến về LLVM IR / C |
 | `hot_patch_live_memory` | `target_pid`, `hook_address`, `patch_bytes_hex` | Tiêm trampoline và hook động trực tiếp vào RAM tiến trình |
 
 ---

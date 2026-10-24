@@ -41,6 +41,7 @@
     "setup": "node scripts/symb.mjs setup",
     "audit": "node scripts/audit-capabilities.mjs",
     "verify": "node scripts/verify-all.mjs",
+    "verify:decompile": "node scripts/verify-decompiler.mjs",
     "verify:z3": "node scripts/verify-z3-solver.mjs",
     "verify:ollvm": "node scripts/verify-ollvm-unflatten.mjs",
     "verify:branch": "node scripts/verify-smt-branch.mjs",

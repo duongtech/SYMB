@@ -9,6 +9,7 @@ console.log(chalk.magenta.bold("═".repeat(60) + "\n"));
 const suites = [
   { name: "System Capabilities & Solver Audit", script: "scripts/audit-capabilities.mjs" },
   { name: "MCP Tool Contracts & Zod Schemas", script: "scripts/verify-mcp-contracts.mjs" },
+  { name: "Native High-Speed EXE Decompiler & Layout Engine", script: "scripts/verify-decompiler.mjs" },
   { name: "Z3 SMT Mathematical Logic Engine", script: "scripts/verify-z3-solver.mjs" },
   { name: "OLLVM Control-Flow Unflattening (PE & ELF)", script: "scripts/verify-ollvm-unflatten.mjs" },
   { name: "SMT Branch Reachability Solver", script: "scripts/verify-smt-branch.mjs" }

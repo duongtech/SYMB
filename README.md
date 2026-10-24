@@ -150,10 +150,12 @@ SYMB implements 5 core symbolic tools via standard MCP JSON-RPC:
 
 | Tool Name | Key Arguments | Primary Capability |
 | :--- | :--- | :--- |
+| `decompile_native_function` | `binary_path`, `function_address`, `max_instructions` | Decompiles machine code to clean C pseudocode in milliseconds with Capstone |
+| `inspect_binary_layout` | `binary_path` | Scans PE/ELF headers, ASLR/DEP mitigations, IAT imports, and section entropy |
+| `detect_crypto_primitives` | `binary_path` | Scans for AES S-Boxes, SHA/MD5 constants, CRC32 tables, and ChaCha schedules |
 | `unflatten_control_flow` | `binary_path`, `function_address`, `arch` | Deobfuscates OLLVM switch dispatchers, restores clean CFG |
 | `solve_branch_reachability` | `target_address`, `avoid_addresses`, `symbolic_vars` | Uses Z3 to solve for exact inputs reaching target branches |
 | `trace_symbolic_taint` | `source_address`, `sink_address`, `taint_var` | Verifies dataflow from untrusted input to memory sinks |
-| `devirtualize_bytecode_vm` | `vm_entry_address`, `bytecode_offset` | Lifts custom VM bytecode back to standard IR / C pseudocode |
 | `hot_patch_live_memory` | `target_pid`, `hook_address`, `patch_bytes_hex` | Injects zero-disk trampolines into running process RAM |
 
 Detailed JSON schemas and response contracts are documented in [docs/mcp-contracts.md](docs/mcp-contracts.md).

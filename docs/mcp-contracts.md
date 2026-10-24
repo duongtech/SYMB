@@ -123,3 +123,57 @@ Can thiệp trực tiếp vào RAM của tiến trình đang chạy mà không c
   "required": ["pid", "memory_address", "patch_bytes_hex"]
 }
 ```
+
+
+---
+
+## Tool 5: `decompile_native_function`
+
+Dịch ngược tức thời mã máy thành mã giả C (C Pseudocode), phân rã khối cơ bản (basic blocks) và liên kết chuỗi hằng số (.rdata XREFs) với tốc độ mili-giây.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to binary (PE/EXE, ELF, Mach-O)" },
+    "function_address": { "type": "string", "description": "Hex address (e.g. '0x1400014e0') or entry point" },
+    "max_instructions": { "type": "number", "default": 250, "description": "Maximum instructions to lift" }
+  },
+  "required": ["binary_path"]
+}
+```
+
+---
+
+## Tool 6: `inspect_binary_layout`
+
+Quét cấu trúc PE/ELF, các lớp bảo vệ (ASLR, DEP/NX, SafeSEH, CFG), bảng hàm Import/Export, và đo lường độ hỗn loạn entropy Shannon trên từng section để phát hiện packer (UPX, Themida, VMProtect).
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to target binary" }
+  },
+  "required": ["binary_path"]
+}
+```
+
+---
+
+## Tool 7: `detect_crypto_primitives`
+
+Tầm soát và định vị các cấu trúc mật mã trong binary: S-Box AES Rijndael, Hằng số SHA-256 / MD5, Bảng CRC32, ChaCha20 constant, và Base64 alphabet để phục vụ bài toán nghịch đảo key SMT.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to target binary" }
+  },
+  "required": ["binary_path"]
+}
+```

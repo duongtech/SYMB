@@ -25,3 +25,17 @@ export const HotPatchInputSchema = z.object({
   patch_bytes_hex: z.string().describe("Hex bytes to write (e.g. '90 90' or 'B8 01 00 00 00 C3')"),
   expected_original_bytes: z.string().optional().describe("Verification check to prevent accidental corruption")
 });
+
+export const DecompileInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary (PE/EXE, ELF, Mach-O)"),
+  function_address: z.string().optional().describe("Function hex address or symbol name. If omitted, decompiles entry point"),
+  max_instructions: z.number().default(250).describe("Maximum instruction window to disassemble")
+});
+
+export const InspectLayoutInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary")
+});
+
+export const CryptoScanInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary")
+});
