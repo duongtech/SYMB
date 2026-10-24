@@ -6,8 +6,6 @@
 
 ### Một MCP Server duy nhất cho thực thi biểu trưng, dỡ mã làm rối OLLVM và giải phương trình ràng buộc nhị phân.
 
-**REA quan sát mã nguồn. SYMB giải quyết nó.**
-
 [![npm version](https://img.shields.io/npm/v/symb-agents?style=flat-square&color=cb3837)](https://www.npmjs.com/package/symb-agents)
 [![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](../mcp-contracts.md)
 [![Python requirements](https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&logo=python&logoColor=white)](#yêu-cầu-hệ-thống)
@@ -28,25 +26,13 @@ npx symb-agents setup
 
 ## ⚡ SYMB Là Gì?
 
-**SYMB** là một máy chủ Model Context Protocol (MCP) mã nguồn mở, trang bị cho các AI Agent (Claude Code, Cursor, Antigravity, Copilot, Codex) siêu năng lực về **Thực thi biểu trưng (Symbolic Execution), Giải ràng buộc SMT, và Dỡ bỏ mã làm rối luồng điều khiển (Deobfuscation)**.
+**SYMB** là một máy chủ Model Context Protocol (MCP) mã nguồn mở, nâng tầm các AI Agent (Claude Code, Cursor, Antigravity, Copilot, Codex) thành **những cỗ máy thực thi biểu trưng (Symbolic Execution), giải ràng buộc SMT, và dỡ bỏ mã làm rối luồng điều khiển (Deobfuscation) hoàn toàn tự động**.
 
-Trong khi các công cụ như [REA](https://github.com/morluto/rea) rất xuất sắc ở khâu *quan sát tĩnh* (dịch ngược file nhị phân, đọc AST, giải nén ASAR), **SYMB lấp đầy khoảng trống then chốt: giải toán toán học và dỡ rối chủ động**.
-
-Khi các trình decompiler thông thường đầu hàng vì mã nguồn bị làm phẳng bằng OLLVM, ảo hóa (VM-based), hoặc được bảo vệ bởi các biểu thức kiểm tra mã hóa phức tạp, SYMB kích hoạt sức mạnh của **angr**, **Z3 SMT Solver**, và **Triton** để tự động giải ra input hợp lệ, dỡ phẳng đồ thị luồng điều khiển (CFG), và chứng minh các đường đi thực thi trong vòng vài giây.
-
----
-
-## ⚔️ Tại Sao Lại Chọn SYMB? (So Sánh Trực Diện Với REA)
-
-| Tiêu Chí | REA (`morluto/rea`) | SYMB (`duongtech/symb`) |
-| :--- | :--- | :--- |
-| **Bản Chất Cốt Lõi** | Quan sát cú pháp tĩnh thụ động | **Thực thi biểu trưng & Can thiệp giải toán chủ động** |
-| **Mã Bị Làm Phẳng OLLVM** | ❌ Đầu hàng (Ra vòng lặp switch 50.000 dòng vô nghĩa) | ✅ **Dỡ phẳng biểu trưng & Phục hồi CFG gốc sạch sẽ** |
-| **Tìm Input Thỏa Mãn Nhánh** | ❌ Thủ công (Bắt lập trình viên tự tính tay) | ✅ **Bộ giải Z3 giải nghiệm byte chính xác trong < 3s** |
-| **Phân Tích Đường Đi (Reachability)** | ❌ Ước lượng sơ đồ hàm | ✅ **Chứng minh toán học đường đi khả thi / bất khả thi** |
-| **Truy Vết Lỗ Hổng (Taint Analysis)** | ⚠️ Nhận xét bề mặt văn bản | ✅ **Theo dấu vết biến độc hại tới tận memory sinks** |
-| **Can Thiệp Bộ Nhớ Tiến Trình** | ⚠️ Thụ động | ✅ **Hot-patching trực tiếp trong RAM (Zero-Disk)** |
-| **Kết Quả Trả Về Cho Agent** | Đoạn text AST / C giả chung chung | **Chứng cứ chuẩn hóa + Dữ liệu nghiệm Input cụ thể** |
+Trong khi các trình dịch ngược truyền thống chỉ dừng lại ở việc đọc cú pháp tĩnh, **SYMB trao cho AI Agent năng lực toán học chủ động**:
+- **Dỡ Phẳng Luồng Điều Khiển Biểu Trưng (Unflattening):** Quét sạch các kỹ thuật làm phẳng OLLVM / Obfuscator-LLVM, mở rộng các bẫy điều kiện giả, và tái cấu trúc lại đồ thị luồng điều khiển (CFG) sạch sẽ như ban đầu.
+- **Tự Động Giải Nghiệm SMT Nhánh:** Khám phá chính xác chuỗi byte đầu vào đưa luồng thực thi tới nhánh thành công mong muốn bằng sức mạnh của **angr** và **Z3 Theorem Prover**.
+- **Theo Dấu Vết Dữ Liệu Độc Hại (Taint Tracking):** Chứng minh toán học xem input người dùng có thể kích hoạt các điểm nghẽn bộ nhớ nhạy cảm hay không.
+- **Can Thiệp Bộ Nhớ Trực Tiếp (Hot-Patching):** Hook hàm và sửa đổi trực tiếp trong RAM (Zero-Disk) ngay từ giao diện chat của Agent.
 
 ---
 
@@ -64,7 +50,7 @@ Sử dụng `angr` và bộ chứng minh định lý `Z3 SMT Theorem Prover` đ�
 Thực hiện phân tích vết dữ liệu biểu trưng trên assembly gốc và WebAssembly. Kiểm tra xem dữ liệu do người dùng kiểm soát có thể tràn vào các điểm nhạy cảm (`memcpy`, `strcpy`, format strings, địa chỉ nhảy gián tiếp) hay không.
 
 ### 4. `devirtualize_bytecode_vm`
-Nhận diện vòng lặp phân phối lệnh (Dispatcher) của các máy ảo tùy biến (Themida / custom bytecode). Phục hồi con trỏ lệnh ảo (VPC), bảng xử lý opcode, và nâng cấp tập lệnh ảo ngược về LLVM IR / C chuẩn.
+Nhận diện vòng lặp phân phối lệnh (Dispatcher) của các máy ảo tùy biến (custom bytecode). Phục hồi con trỏ lệnh ảo (VPC), bảng xử lý opcode, và nâng cấp tập lệnh ảo ngược về LLVM IR / C chuẩn.
 
 ### 5. `hot_patch_live_memory`
 Thực hiện kỹ thuật tiêm trampoline và hook hàm trực tiếp trong bộ nhớ RAM của tiến trình đang chạy (Zero-Disk). Cho phép Agent thử nghiệm các thay đổi logic và mở khóa mà không cần ghi đè file trên ổ cứng.
