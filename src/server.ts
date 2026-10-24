@@ -10,16 +10,20 @@ import {
   TaintInputSchema,
   HotPatchInputSchema,
   DecompileInputSchema,
+  DecompileProgramInputSchema,
   InspectLayoutInputSchema,
-  CryptoScanInputSchema
+  CryptoScanInputSchema,
+  ProtectionsScanInputSchema
 } from "./contracts/schemas.js";
 import { runUnflatten } from "./core/unflatten.js";
 import { runBranchSolver } from "./core/solver.js";
 import { runTaintAnalysis } from "./core/taint.js";
 import { runHotPatch } from "./core/trampoline.js";
 import { runDecompile } from "./core/decompile.js";
+import { runDecompileProgram } from "./core/decompile_program.js";
 import { runInspectLayout } from "./core/layout.js";
 import { runCryptoScan } from "./core/crypto.js";
+import { runProtectionsScan } from "./core/protections.js";
 
 export function createSymbServer(): Server {
   const server = new Server(
@@ -41,13 +45,38 @@ export function createSymbServer(): Server {
         {
           name: "decompile_native_function",
           description:
-            "Decompiles native machine code into clean C pseudocode in milliseconds. Disassembles basic blocks, extracts string references (.rdata XREFs), and reconstructs branch conditions across Windows PE and Linux ELF.",
+            "Decompiles native machine code into clean C pseudocode in milliseconds (< 400ms). Disassembles basic blocks, extracts string references (.rdata/.rodata XREFs), resolves IAT/PLT symbols, and reconstructs branch conditions across Windows PE and Linux ELF.",
           inputSchema: {
             type: "object",
             properties: {
               binary_path: { type: "string", description: "Absolute path to binary (PE/EXE, ELF, Mach-O)" },
-              function_address: { type: "string", description: "Function hex address (e.g. '0x1400014e0') or entry point" },
-              max_instructions: { type: "number", default: 250, description: "Maximum instruction count to lift" }
+              function_address: { type: "string", description: "Function hex address (e.g. '0x4015f6') or entry point" },
+              max_instructions: { type: "number", default: 300, description: "Maximum instruction count to lift" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "decompile_entire_program",
+          description:
+            "Automated whole-binary decompiler. Scans entry point, export tables (EAT), and function prologues across the binary to generate a unified, compilable C source code file with forward declarations and cross-referenced calls.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary" },
+              max_functions: { type: "number", default: 10, description: "Maximum number of discovered functions to decompile" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "detect_binary_protections",
+          description:
+            "Scans binary for protectors/packers (UPX, Themida, VMProtect, Enigma), Anti-Debugging APIs (IsDebuggerPresent, NtQueryInformationProcess, etc.), Anti-VM artifacts, and ASM timing traps (RDTSC, PEB direct read) with an automated security risk score.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary" }
             },
             required: ["binary_path"]
           }
@@ -55,7 +84,7 @@ export function createSymbServer(): Server {
         {
           name: "inspect_binary_layout",
           description:
-            "Scans binary headers (PE/ELF), mitigations (ASLR, DEP/NX, SafeSEH, CFG), imported/exported DLL functions, and measures Shannon entropy per section to detect UPX, Themida, and VMProtect packing.",
+            "Scans binary headers (PE/ELF), mitigations (ASLR, DEP/NX, SafeSEH, CFG), imported/exported DLL functions, and measures Shannon entropy per section to detect packing and encrypted payloads.",
           inputSchema: {
             type: "object",
             properties: {
@@ -98,8 +127,12 @@ export function createSymbServer(): Server {
             type: "object",
             properties: {
               binary_path: { type: "string", description: "Absolute path to binary" },
-              target_address: { type: "string", description: "Target hex address (e.g. '0x401820')" },
-              avoid_addresses: { type: "array", items: { type: "string" }, description: "Error paths to avoid" },
+              target_address: { type: "string", description: "Target reachability hex address" },
+              avoid_addresses: {
+                type: "array",
+                items: { type: "string" },
+                description: "Array of failure hex addresses to prune"
+              },
               input_length: { type: "number", default: 32 }
             },
             required: ["binary_path", "target_address"]
@@ -108,13 +141,13 @@ export function createSymbServer(): Server {
         {
           name: "trace_symbolic_taint",
           description:
-            "Performs dynamic taint analysis to verify if user-controlled input propagates into memory sinks (memcpy, strcpy, system).",
+            "Traces memory and register data-flow dependencies from user input sources directly to critical execution sinks.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string" },
-              source_symbol: { type: "string", description: "Input source symbol" },
-              sink_symbol: { type: "string", description: "Target sink function" }
+              binary_path: { type: "string", description: "Path to binary" },
+              source_symbol: { type: "string", description: "Input source symbol or entry point" },
+              sink_symbol: { type: "string", description: "Vulnerable sink function" }
             },
             required: ["binary_path", "source_symbol", "sink_symbol"]
           }
@@ -122,14 +155,14 @@ export function createSymbServer(): Server {
         {
           name: "hot_patch_live_memory",
           description:
-            "Performs zero-disk in-memory trampoline injection and function hooking on a running process.",
+            "Injects atomic hot-patch memory trampolines into running processes without touching disk binaries or triggering file-integrity checks.",
           inputSchema: {
             type: "object",
             properties: {
-              pid: { type: "number", description: "Target Process ID" },
-              memory_address: { type: "string", description: "Virtual address or relative offset" },
-              patch_bytes_hex: { type: "string", description: "Hex bytes to write" },
-              expected_original_bytes: { type: "string", description: "Verification bytes" }
+              pid: { type: "number", description: "Process ID" },
+              memory_address: { type: "string", description: "Hex address to hook" },
+              patch_bytes_hex: { type: "string", description: "Hex bytes payload" },
+              expected_original_bytes: { type: "string", description: "Optional safety check bytes" }
             },
             required: ["pid", "memory_address", "patch_bytes_hex"]
           }
@@ -138,87 +171,116 @@ export function createSymbServer(): Server {
     };
   });
 
-  // Handle Tool Executions
+  // Handle tool calls
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
     try {
-      if (name === "decompile_native_function") {
-        const parsed = DecompileInputSchema.parse(args);
-        const evidence = await runDecompile(parsed.binary_path, parsed.function_address, parsed.max_instructions);
-        return {
-          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
-        };
-      }
+      switch (name) {
+        case "decompile_native_function": {
+          const parsed = DecompileInputSchema.parse(args);
+          const result = await runDecompile(
+            parsed.binary_path,
+            parsed.function_address,
+            parsed.max_instructions
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-      if (name === "inspect_binary_layout") {
-        const parsed = InspectLayoutInputSchema.parse(args);
-        const evidence = await runInspectLayout(parsed.binary_path);
-        return {
-          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
-        };
-      }
+        case "decompile_entire_program": {
+          const parsed = DecompileProgramInputSchema.parse(args);
+          const result = await runDecompileProgram(
+            parsed.binary_path,
+            parsed.max_functions
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-      if (name === "detect_crypto_primitives") {
-        const parsed = CryptoScanInputSchema.parse(args);
-        const evidence = await runCryptoScan(parsed.binary_path);
-        return {
-          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
-        };
-      }
+        case "detect_binary_protections": {
+          const parsed = ProtectionsScanInputSchema.parse(args);
+          const result = await runProtectionsScan(parsed.binary_path);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-      if (name === "unflatten_control_flow") {
-        const parsed = UnflattenInputSchema.parse(args);
-        const evidence = await runUnflatten(parsed.binary_path, parsed.function_address, parsed.timeout_seconds);
-        return {
-          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
-        };
-      }
+        case "inspect_binary_layout": {
+          const parsed = InspectLayoutInputSchema.parse(args);
+          const result = await runInspectLayout(parsed.binary_path);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-      if (name === "solve_branch_reachability") {
-        const parsed = SolveBranchInputSchema.parse(args);
-        const evidence = await runBranchSolver(
-          parsed.binary_path,
-          parsed.target_address,
-          parsed.avoid_addresses,
-          parsed.input_length
-        );
-        return {
-          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
-        };
-      }
+        case "detect_crypto_primitives": {
+          const parsed = CryptoScanInputSchema.parse(args);
+          const result = await runCryptoScan(parsed.binary_path);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-      if (name === "trace_symbolic_taint") {
-        const parsed = TaintInputSchema.parse(args);
-        const evidence = await runTaintAnalysis(parsed.binary_path, parsed.source_symbol, parsed.sink_symbol);
-        return {
-          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
-        };
-      }
+        case "unflatten_control_flow": {
+          const parsed = UnflattenInputSchema.parse(args);
+          const result = await runUnflatten(
+            parsed.binary_path,
+            parsed.function_address,
+            parsed.timeout_seconds
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-      if (name === "hot_patch_live_memory") {
-        const parsed = HotPatchInputSchema.parse(args);
-        const evidence = await runHotPatch(
-          parsed.pid,
-          parsed.memory_address,
-          parsed.patch_bytes_hex,
-          parsed.expected_original_bytes
-        );
-        return {
-          content: [{ type: "text", text: JSON.stringify(evidence, null, 2) }]
-        };
-      }
+        case "solve_branch_reachability": {
+          const parsed = SolveBranchInputSchema.parse(args);
+          const result = await runBranchSolver(
+            parsed.binary_path,
+            parsed.target_address,
+            parsed.avoid_addresses,
+            parsed.input_length
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
 
-      throw new Error(`Unknown tool: ${name}`);
-    } catch (err: any) {
+        case "trace_symbolic_taint": {
+          const parsed = TaintInputSchema.parse(args);
+          const result = await runTaintAnalysis(
+            parsed.binary_path,
+            parsed.source_symbol,
+            parsed.sink_symbol
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case "hot_patch_live_memory": {
+          const parsed = HotPatchInputSchema.parse(args);
+          const result = await runHotPatch(
+            parsed.pid,
+            parsed.memory_address,
+            parsed.patch_bytes_hex,
+            parsed.expected_original_bytes
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        default:
+          throw new Error(`Unknown SYMB tool: ${name}`);
+      }
+    } catch (error: any) {
       return {
         isError: true,
-        content: [
-          {
-            type: "text",
-            text: `Error executing ${name}: ${err.message}`
-          }
-        ]
+        content: [{ type: "text", text: `Tool Error: ${error.message}` }]
       };
     }
   });
@@ -226,9 +288,11 @@ export function createSymbServer(): Server {
   return server;
 }
 
-export async function runStdioServer() {
+export async function runServer(): Promise<void> {
   const server = createSymbServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("⚡ SYMB MCP Server running on stdio");
+  console.error("SYMB (Symbolic Reversing & Decompiler) MCP Server running on stdio");
 }
+
+export const runStdioServer = runServer;

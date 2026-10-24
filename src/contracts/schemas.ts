@@ -29,7 +29,12 @@ export const HotPatchInputSchema = z.object({
 export const DecompileInputSchema = z.object({
   binary_path: z.string().describe("Absolute path to target binary (PE/EXE, ELF, Mach-O)"),
   function_address: z.string().optional().describe("Function hex address or symbol name. If omitted, decompiles entry point"),
-  max_instructions: z.number().default(250).describe("Maximum instruction window to disassemble")
+  max_instructions: z.number().default(300).describe("Maximum instruction window to disassemble")
+});
+
+export const DecompileProgramInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary (PE/EXE, ELF, Mach-O)"),
+  max_functions: z.number().default(10).describe("Maximum number of discovered functions to decompile")
 });
 
 export const InspectLayoutInputSchema = z.object({
@@ -37,5 +42,9 @@ export const InspectLayoutInputSchema = z.object({
 });
 
 export const CryptoScanInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary")
+});
+
+export const ProtectionsScanInputSchema = z.object({
   binary_path: z.string().describe("Absolute path to target binary")
 });

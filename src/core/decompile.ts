@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export interface DecompileResult {
   function_address: string;
+  symbol_name?: string;
   instruction_count: number;
   basic_blocks_count: number;
   disassembly: Array<{
@@ -15,15 +16,17 @@ export interface DecompileResult {
     op_str: string;
     bytes: string;
     string_xref?: string;
+    iat_xref?: string;
   }>;
   decompiled_pseudocode: string;
   string_references: string[];
+  iat_imports_used?: string[];
 }
 
 export async function runDecompile(
   binaryPath: string,
   functionAddress?: string,
-  maxInstructions: number = 250
+  maxInstructions: number = 300
 ): Promise<SymbEvidence<DecompileResult>> {
   const startTime = Date.now();
   const pyScript = path.join(__dirname, "python_engines", "decompiler_core.py");
@@ -58,7 +61,8 @@ export async function runDecompile(
           basic_blocks_count: 0,
           disassembly: [],
           decompiled_pseudocode: `// Error decompiling function at ${functionAddress}\n${errorOutput}`,
-          string_references: []
+          string_references: [],
+          iat_imports_used: []
         };
       }
 

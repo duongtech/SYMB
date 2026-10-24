@@ -146,17 +146,45 @@ npx symb-agents setup
 
 ## 🛠️ MCP Tool Reference
 
-SYMB implements 5 core symbolic tools via standard MCP JSON-RPC:
+SYMB implements 9 high-speed native reversing tools via standard MCP JSON-RPC:
 
 | Tool Name | Key Arguments | Primary Capability |
 | :--- | :--- | :--- |
-| `decompile_native_function` | `binary_path`, `function_address`, `max_instructions` | Decompiles machine code to clean C pseudocode in milliseconds with Capstone |
-| `inspect_binary_layout` | `binary_path` | Scans PE/ELF headers, ASLR/DEP mitigations, IAT imports, and section entropy |
-| `detect_crypto_primitives` | `binary_path` | Scans for AES S-Boxes, SHA/MD5 constants, CRC32 tables, and ChaCha schedules |
-| `unflatten_control_flow` | `binary_path`, `function_address`, `arch` | Deobfuscates OLLVM switch dispatchers, restores clean CFG |
-| `solve_branch_reachability` | `target_address`, `avoid_addresses`, `symbolic_vars` | Uses Z3 to solve for exact inputs reaching target branches |
-| `trace_symbolic_taint` | `source_address`, `sink_address`, `taint_var` | Verifies dataflow from untrusted input to memory sinks |
-| `hot_patch_live_memory` | `target_pid`, `hook_address`, `patch_bytes_hex` | Injects zero-disk trampolines into running process RAM |
+| `decompile_native_function` | `binary_path`, `function_address`, `max_instructions` | Decompiles machine code to clean C pseudocode in < 400ms with Capstone, resolving string XREFs, condition branching, and IAT/PLT stubs |
+| `decompile_entire_program` | `binary_path`, `max_functions` | Automated whole-program decompiler. Recovers function entry points and generates unified, compilable C source files with forward declarations |
+| `detect_binary_protections` | `binary_path` | Detects packers (UPX, Themida, VMProtect, Enigma), Anti-Debug APIs, Anti-VM artifacts, and ASM timing traps with risk scores |
+| `inspect_binary_layout` | `binary_path` | Scans PE/ELF headers, ASLR/DEP/SafeSEH mitigations, IAT/EAT exports, and measures Shannon entropy per section |
+| `detect_crypto_primitives` | `binary_path` | Scans for AES S-Boxes, SHA/MD5 constants, CRC32 tables, RC4 loops, and ChaCha schedules for SMT inversion |
+| `unflatten_control_flow` | `binary_path`, `function_address`, `timeout_seconds` | Symbolically deobfuscates OLLVM switch dispatchers and restores original CFG |
+| `solve_branch_reachability` | `binary_path`, `target_address`, `avoid_addresses` | Uses Z3 SMT Solver & angr to solve for exact inputs reaching target branches |
+| `trace_symbolic_taint` | `binary_path`, `source_symbol`, `sink_symbol` | Bit-level dataflow propagation analysis from input buffers to critical memory sinks |
+| `hot_patch_live_memory` | `pid`, `memory_address`, `patch_bytes_hex` | Injects zero-disk trampolines into running process RAM without disk modification |
+
+---
+
+## 💻 Standalone Command-Line Interface (CLI)
+
+SYMB provides a rich standalone CLI tool for rapid terminal investigations:
+
+```bash
+# Decompile any function to C pseudocode in milliseconds
+symb decompile ./examples/02_smt_crackme/ais3_crackme 0x4005f6
+
+# Translate an entire binary to a unified C project file
+symb decompile-all ./examples/02_smt_crackme/ais3_crackme --limit 10
+
+# Scan protections, packers (UPX, VMProtect), Anti-Debugging & Anti-VM
+symb protections ./examples/01_ollvm_cff/CFF_win64.exe
+
+# Deep binary inspection (PE/ELF headers, ASLR/DEP, Shannon entropy)
+symb inspect ./examples/01_ollvm_cff/CFF_win64.exe
+
+# Detect cryptographic primitives and tables
+symb crypto ./examples/01_ollvm_cff/CFF_win64.exe
+
+# Symbolically unflatten OLLVM state dispatcher
+symb unflatten ./examples/01_ollvm_cff/CFF_win64.exe 0x401500
+```
 
 Detailed JSON schemas and response contracts are documented in [docs/mcp-contracts.md](docs/mcp-contracts.md).
 

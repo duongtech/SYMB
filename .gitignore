@@ -59,3 +59,5 @@ yarn-error.log*
 *.raw
 test_bins/
 samples/*.dump
+decoded_*.txt
+latest_user_prompt.txt

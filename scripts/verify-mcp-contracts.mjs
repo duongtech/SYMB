@@ -5,12 +5,42 @@ import {
   UnflattenInputSchema,
   SolveBranchInputSchema,
   TaintInputSchema,
-  HotPatchInputSchema
+  HotPatchInputSchema,
+  DecompileInputSchema,
+  DecompileProgramInputSchema,
+  InspectLayoutInputSchema,
+  CryptoScanInputSchema,
+  ProtectionsScanInputSchema
 } from "../dist/contracts/schemas.js";
 
 console.log(chalk.cyan.bold("\n📜 SYMB MCP TOOL SCHEMAS & CANONICAL EVIDENCE CONTRACTS VERIFICATION\n"));
 
 const schemas = [
+  {
+    name: "decompile_native_function Schema",
+    schema: DecompileInputSchema,
+    sampleValid: { binary_path: "test.exe", function_address: "0x140001000", max_instructions: 300 }
+  },
+  {
+    name: "decompile_entire_program Schema",
+    schema: DecompileProgramInputSchema,
+    sampleValid: { binary_path: "test.exe", max_functions: 10 }
+  },
+  {
+    name: "detect_binary_protections Schema",
+    schema: ProtectionsScanInputSchema,
+    sampleValid: { binary_path: "test.exe" }
+  },
+  {
+    name: "inspect_binary_layout Schema",
+    schema: InspectLayoutInputSchema,
+    sampleValid: { binary_path: "target.exe" }
+  },
+  {
+    name: "detect_crypto_primitives Schema",
+    schema: CryptoScanInputSchema,
+    sampleValid: { binary_path: "target.exe" }
+  },
   {
     name: "unflatten_control_flow Schema",
     schema: UnflattenInputSchema,
@@ -49,7 +79,7 @@ for (const s of schemas) {
 
 console.log("\n" + "─".repeat(50));
 if (allPassed) {
-  console.log(chalk.green.bold("★ ALL MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
+  console.log(chalk.green.bold("★ ALL 9 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
   process.exit(0);
 } else {
   console.log(chalk.red.bold("✖ MCP Schema verification errors encountered\n"));
