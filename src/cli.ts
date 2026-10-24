@@ -12,6 +12,8 @@ import { runUnflatten } from "./core/unflatten.js";
 import { runApkDecompile } from "./core/apk.js";
 import { runStringDecrypt } from "./core/strings_decrypt.js";
 import { runIosDecompile } from "./core/ios.js";
+import { runEntropyScan } from "./core/entropy.js";
+import { runXrefAnalysis } from "./core/xref.js";
 
 const program = new Command();
 
@@ -249,6 +251,52 @@ program
         console.log(chalk.cyan(`Imported Frameworks:`), res.macho_analysis.imported_frameworks);
       }
       console.log(chalk.bold.white("\nReconstructed Objective-C / Swift Interface:\n" + res.reconstructed_objc_header));
+    } catch (e: any) {
+      console.error(chalk.red(`Error: ${e.message}`));
+    }
+  });
+
+program
+  .command("entropy <binary>")
+  .description("Calculate rolling Shannon entropy heatmap and detect packed/encrypted payloads")
+  .option("-b, --block-size <bytes>", "Block size for entropy calculation", "512")
+  .action(async (binary, options) => {
+    console.log(chalk.cyan(`\n📊 Scanning byte entropy & cryptor signatures: ${binary}...`));
+    try {
+      const res = await runEntropyScan(binary, parseInt(options.blockSize, 10));
+      console.log(chalk.green(`✔ Blocks Analyzed: ${res.total_blocks_analyzed} (${res.block_size_bytes}B blocks)`));
+      console.log(chalk.green(`✔ Entropy Range: Min ${res.min_entropy} | Mean ${res.mean_entropy} | Max ${res.max_entropy}`));
+      console.log(chalk.yellow(`Packed / Encrypted Ratio: ${res.packed_percentage} (${res.is_packed_or_encrypted ? "PACKED / CRYPTOR DETECTED" : "UNPACKED"})`));
+      if (res.high_entropy_regions_count > 0) {
+        console.log(chalk.red(`⚠ High-Entropy Payload Regions (${res.high_entropy_regions_count}):`), res.high_entropy_regions);
+      }
+      console.log(chalk.bold.white("\nEntropy Distribution Histogram:\n" + res.ascii_entropy_histogram.join("\n")));
+    } catch (e: any) {
+      console.error(chalk.red(`Error: ${e.message}`));
+    }
+  });
+
+program
+  .command("xrefs <binary>")
+  .description("Trace whole-program call graph edges, indirect calls, and string XREFs")
+  .action(async (binary) => {
+    console.log(chalk.cyan(`\n🔗 Tracing call graph & string cross-references: ${binary}...`));
+    try {
+      const res = await runXrefAnalysis(binary);
+      console.log(chalk.green(`✔ Format: ${res.format} (Entry: ${res.entry_point || "unknown"})`));
+      console.log(chalk.green(`✔ Call Instructions: ${res.total_call_instructions} | String XREFs: ${res.total_string_xrefs}`));
+      if (res.top_called_targets?.length) {
+        console.log(chalk.bold.yellow(`\nTop Called Hub Functions:`));
+        res.top_called_targets.forEach((t, i) => {
+          console.log(`  #${i+1} Target: ${t.target} (${t.caller_references} references)`);
+        });
+      }
+      if (res.sample_string_xrefs?.length) {
+        console.log(chalk.cyan(`\nSample String XREFs:`));
+        res.sample_string_xrefs.slice(0, 8).forEach(s => {
+          console.log(`  [${s.instruction_address}] -> "${s.string_literal}" (at ${s.string_address})`);
+        });
+      }
     } catch (e: any) {
       console.error(chalk.red(`Error: ${e.message}`));
     }

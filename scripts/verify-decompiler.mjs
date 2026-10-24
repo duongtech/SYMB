@@ -10,6 +10,8 @@ import { runProtectionsScan } from "../dist/core/protections.js";
 import { runApkDecompile } from "../dist/core/apk.js";
 import { runStringDecrypt } from "../dist/core/strings_decrypt.js";
 import { runIosDecompile } from "../dist/core/ios.js";
+import { runEntropyScan } from "../dist/core/entropy.js";
+import { runXrefAnalysis } from "../dist/core/xref.js";
 
 console.log(chalk.cyan.bold("\n⚡ SYMB HIGH-SPEED NATIVE DECOMPILER & EXECUTABLE ENGINE VERIFICATION\n"));
 
@@ -26,7 +28,7 @@ if (!existsSync(targetPE) || !existsSync(targetELF) || !existsSync(targetAPK) ||
 let allPassed = true;
 
 // 1. Binary Layout & Section Entropy
-process.stdout.write(`  [1/8] Inspecting PE Layout & Section Entropy... `);
+process.stdout.write(`  [1/10] Inspecting PE Layout & Section Entropy... `);
 try {
   const layoutRes = await runInspectLayout(targetPE);
   const layout = layoutRes.normalized_result;
@@ -42,7 +44,7 @@ try {
 }
 
 // 2. High-speed Capstone Disassembly & Pseudocode Lifting (with Strings & IAT/PLT)
-process.stdout.write(`  [2/8] Decompiling Native Function to C Pseudocode... `);
+process.stdout.write(`  [2/10] Decompiling Native Function to C Pseudocode... `);
 try {
   const decRes = await runDecompile(targetELF, "0x4005f6");
   const dec = decRes.normalized_result;
@@ -58,7 +60,7 @@ try {
 }
 
 // 3. Whole Program C Translation
-process.stdout.write(`  [3/8] Reconstructing Whole-Program C Source Project... `);
+process.stdout.write(`  [3/10] Reconstructing Whole-Program C Source Project... `);
 try {
   const progRes = await runDecompileProgram(targetELF, 5);
   if (progRes.total_functions_decompiled >= 3 && progRes.reconstructed_c_translation.includes("FORWARD DECLARATIONS")) {
@@ -73,7 +75,7 @@ try {
 }
 
 // 4. Binary Protections, Packers & Anti-Debug Scanner
-process.stdout.write(`  [4/8] Scanning Protections, Anti-Debugging & Timing Traps... `);
+process.stdout.write(`  [4/10] Scanning Protections, Anti-Debugging & Timing Traps... `);
 try {
   const protRes = await runProtectionsScan(targetPE);
   if (protRes.protection_risk_score !== undefined && protRes.anti_debugging_apis.length > 0) {
@@ -88,7 +90,7 @@ try {
 }
 
 // 5. Native APK & Dalvik DEX Decompiler Suite
-process.stdout.write(`  [5/8] Decompiling Android APK & Reconstructing Java Classes... `);
+process.stdout.write(`  [5/10] Decompiling Android APK & Reconstructing Java Classes... `);
 try {
   const apkRes = await runApkDecompile(targetAPK, 10);
   if (apkRes.is_apk && apkRes.permissions.length > 0 && apkRes.reconstructed_java.includes("VaultManager")) {
@@ -103,7 +105,7 @@ try {
 }
 
 // 6. Apple iOS IPA & Mach-O ARM64 Decompiler Suite
-process.stdout.write(`  [6/8] Decompiling iOS IPA, FairPlay DRM & Anti-Jailbreak... `);
+process.stdout.write(`  [6/10] Decompiling iOS IPA, FairPlay DRM & Anti-Jailbreak... `);
 try {
   const iosRes = await runIosDecompile(targetIPA);
   if (iosRes.is_ipa && iosRes.macho_analysis?.fairplay_drm_encrypted && iosRes.macho_analysis?.jailbreak_detection_alerts.length > 0) {
@@ -118,7 +120,7 @@ try {
 }
 
 // 7. Automated String Decryptor & Deobfuscator
-process.stdout.write(`  [7/8] Decrypting Obfuscated Strings (Rolling XOR & Base64)... `);
+process.stdout.write(`  [7/10] Decrypting Obfuscated Strings (Rolling XOR & Base64)... `);
 try {
   const decStrRes = await runStringDecrypt(targetPE, 10);
   if (decStrRes.total_encrypted_strings_recovered > 0) {
@@ -133,7 +135,7 @@ try {
 }
 
 // 8. Cryptographic Primitive Scanner
-process.stdout.write(`  [8/8] Scanning for Cryptographic Constants & Tables... `);
+process.stdout.write(`  [8/10] Scanning for Cryptographic Constants & Tables... `);
 try {
   const cryptoRes = await runCryptoScan(targetPE);
   const cr = cryptoRes.normalized_result;
@@ -143,9 +145,39 @@ try {
   allPassed = false;
 }
 
+// 9. Byte Entropy & Cryptor Heatmap Scanner
+process.stdout.write(`  [9/10] Scanning Byte Entropy Heatmap & Cryptor Payloads... `);
+try {
+  const entropyRes = await runEntropyScan(targetPE, 512);
+  if (entropyRes.total_blocks_analyzed > 50 && entropyRes.ascii_entropy_histogram.length === 10) {
+    console.log(chalk.green(`PASSED ✔ (${entropyRes.total_blocks_analyzed} blocks, Mean Entropy: ${entropyRes.mean_entropy}, Max: ${entropyRes.max_entropy})`));
+  } else {
+    console.log(chalk.red("FAILED ✖ (Entropy analysis incomplete)"));
+    allPassed = false;
+  }
+} catch (e) {
+  console.log(chalk.red(`FAILED ✖ (${e.message})`));
+  allPassed = false;
+}
+
+// 10. Whole-Binary Call Graph & String XREFs
+process.stdout.write(`  [10/10] Tracing Binary Call Graph & String Cross-References (XREFs)... `);
+try {
+  const xrefRes = await runXrefAnalysis(targetPE);
+  if (xrefRes.total_call_instructions > 50 && xrefRes.total_string_xrefs > 10) {
+    console.log(chalk.green(`PASSED ✔ (${xrefRes.total_call_instructions} call edges mapped, ${xrefRes.total_string_xrefs} string XREFs resolved)`));
+  } else {
+    console.log(chalk.red("FAILED ✖ (XREF analysis incomplete)"));
+    allPassed = false;
+  }
+} catch (e) {
+  console.log(chalk.red(`FAILED ✖ (${e.message})`));
+  allPassed = false;
+}
+
 console.log("\n" + "─".repeat(50));
 if (allPassed) {
-  console.log(chalk.green.bold("★ HIGH-SPEED EXE, APK & IOS IPA DECOMPILER SUITE FULLY OPERATIONAL!\n"));
+  console.log(chalk.green.bold("★ 10-STAGE NATIVE EXE, APK & IOS IPA DECOMPILER & RECON SUITE OPERATIONAL!\n"));
   process.exit(0);
 } else {
   console.log(chalk.red.bold("✖ Decompiler verification errors encountered\n"));

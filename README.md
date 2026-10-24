@@ -208,6 +208,12 @@ symb crypto ./examples/01_ollvm_cff/CFF_win64.exe
 
 # Symbolically unflatten OLLVM state dispatcher
 symb unflatten ./examples/01_ollvm_cff/CFF_win64.exe 0x401500
+
+# Scan rolling Shannon entropy heatmap and detect packed/cryptor payloads
+symb entropy ./examples/01_ollvm_cff/CFF_win64.exe
+
+# Trace whole-program call graph edges, indirect calls, and string XREFs
+symb xrefs ./examples/01_ollvm_cff/CFF_win64.exe
 ```
 
 Detailed JSON schemas and response contracts are documented in [docs/mcp-contracts.md](docs/mcp-contracts.md).
