@@ -39,7 +39,13 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "setup": "node scripts/symb.mjs setup",
-    "test": "vitest run",
+    "audit": "node scripts/audit-capabilities.mjs",
+    "verify": "node scripts/verify-all.mjs",
+    "verify:z3": "node scripts/verify-z3-solver.mjs",
+    "verify:ollvm": "node scripts/verify-ollvm-unflatten.mjs",
+    "verify:branch": "node scripts/verify-smt-branch.mjs",
+    "verify:contracts": "node scripts/verify-mcp-contracts.mjs",
+    "test": "node scripts/verify-all.mjs",
     "lint": "oxlint src"
   },
   "dependencies": {
