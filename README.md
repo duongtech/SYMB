@@ -1,8 +1,10 @@
 <div align="center">
 
-**English** · [Tiếng Việt](docs/readme/README_vi.md)
+<p align="center">
+  <img src="docs/assets/symb-banner.svg" alt="SYMB Banner" width="100%">
+</p>
 
-# SYMB: Symbolic Reverse Engineering & Deobfuscation
+**English** · [Tiếng Việt](docs/readme/README_vi.md)
 
 ### One MCP server for symbolic execution, OLLVM unflattening, and constraint solving across binaries and runtimes.
 
@@ -24,107 +26,158 @@ npx symb-agents setup
 
 ---
 
+<p align="center">
+  <img src="docs/assets/symb-terminal-demo.svg" alt="SYMB Interactive Session" width="100%">
+</p>
+
+---
+
 ## ⚡ What is SYMB?
 
-**SYMB** is an autonomous Model Context Protocol (MCP) server that empowers AI Agents (Claude Code, Cursor, Antigravity, Copilot, Codex) with **Symbolic Execution, SMT Constraint Solving, and Control-Flow Deobfuscation**.
+**SYMB** is an autonomous Model Context Protocol (MCP) server that empowers AI Agents (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, **Copilot**, **Codex**) with **Symbolic Execution, SMT Constraint Solving, and Control-Flow Deobfuscation**.
 
-While standard decompilers only perform passive syntax inspection, **SYMB elevates AI agents into active mathematical solvers**:
+While conventional disassemblers and decompilers only perform passive syntax inspection, **SYMB elevates AI agents into active mathematical solvers**:
+
 - **Symbolic Control-Flow Unflattening:** Eliminates OLLVM / Obfuscator-LLVM flattening, unrolls opaque predicates, and reconstructs clean, human-readable control flow graphs.
-- **Automated SMT Branch Solving:** Discovers exact byte-level inputs that drive execution to target success branches using **angr** and the **Z3 Theorem Prover**.
-- **Dynamic Symbolic Taint Tracking:** Proves whether untrusted inputs propagate into dangerous memory sinks.
-- **In-Memory Process Surgery:** Enables zero-disk live function hooking and memory patching directly from the agent chat interface.
+- **Automated SMT Branch Solving:** Mathematically solves for exact byte-level inputs that drive execution to target success branches using **angr** and the **Z3 Theorem Prover**.
+- **Dynamic Symbolic Taint Tracking:** Proves whether attacker-controlled input data can propagate into dangerous memory sinks (`memcpy`, format strings, indirect calls).
+- **Zero-Disk In-Memory Surgery:** Injects live function hooks and dynamic trampolines directly into running processes without modifying executable files on disk.
 
 ---
 
-## 🛠️ MCP Tool Catalog
+## 🌊 How SYMB Works
 
-SYMB provides high-performance MCP tools designed specifically for AI Agent autonomous workflows:
+<p align="center">
+  <img src="docs/assets/symb-solver-flow.svg" alt="SYMB Investigation Flow" width="100%">
+</p>
 
-### 1. `unflatten_control_flow`
-Symbolically analyzes OLLVM / Obfuscator-LLVM Control Flow Flattening (CFF). Identifies state variables, eliminates dispatcher blocks, unrolls opaque predicates, and reconstructs clean, human-readable structured pseudocode.
-
-### 2. `solve_branch_reachability`
-Uses `angr` and the `Z3 SMT Theorem Prover` to find the exact byte sequence that drives execution to a target address (e.g. `SUCCESS`, `VALID_LICENSE`, `UNLOCKED`) while avoiding failure paths.
-
-### 3. `trace_symbolic_taint`
-Performs dynamic taint analysis across native assembly and WebAssembly modules. Verifies whether user-controlled inputs can propagate into critical memory sinks (`memcpy`, `strcpy`, format strings, or indirect branch targets).
-
-### 4. `devirtualize_bytecode_vm`
-Detects custom virtual machine interpreter loops. Identifies the virtual program counter (VPC), handler tables, and lifts the virtual instructions back to standard LLVM IR / C.
-
-### 5. `hot_patch_live_memory`
-Performs zero-disk in-memory trampoline injection and function hooking on running processes. Allows agents to test logic modifications and bypasses in RAM without altering on-disk binary signatures.
+1. **Agent Invocation**: Your AI agent receives a reverse engineering or debugging prompt and queries SYMB via standard MCP JSON-RPC.
+2. **Symbolic AST Generation**: SYMB translates binary instructions or obfuscated basic blocks into intermediate representations (VEX/LLVM IR) and builds symbolic expression trees.
+3. **SMT Constraint Solving**: The Z3 engine and angr symbolically traverse execution paths, accumulating path conditions $\Phi$ and solving for satisfiability.
+4. **Canonical Evidence Delivery**: Results are returned to the agent in structured `SymbEvidence` JSON containing mathematical proofs, recovered assembly edges, and verified concrete payloads.
 
 ---
 
-## 🚀 Quickstart
+## 🎯 What You Can Solve & Analyze
 
-### 1. One-Click Agent Setup
+SYMB requires Node.js 18+ and Python 3.10+ with `z3-solver` and `angr`:
 
-Run the interactive setup wizard in your terminal:
+| Target & Challenge | What SYMB Solves & Returns | Requirements & Guide |
+| :--- | :--- | :--- |
+| **Control-Flow Flattening (CFF)** | Eliminates switch dispatchers, removes bogus jumps, restores original linear CFG and clean C pseudocode | Built-in angr / Z3 engine; [OLLVM Guide](docs/ollvm-unflattening.md) |
+| **Complex Branch Reachability** | Computes the exact byte sequence (ASCII, Hex) that reaches success blocks while avoiding failure paths | Z3 SMT Solver & angr; [SMT Solver Guide](docs/smt-branch-solving.md) |
+| **Custom Bytecode VMs** | Recovers Virtual Program Counter (VPC), handler opcode jump tables, and lifts VM instructions to standard IR | Built-in symbolic tracer; [Target Matrix](docs/target-matrix.md) |
+| **Live Process Memory** | Injects zero-disk function hooks and executable trampolines directly in RAM without modifying disk files | Caller permissions (Admin/root); [Trampolines Guide](docs/zero-disk-trampolines.md) |
+| **Symbolic Taint Analysis** | Bit-level dataflow propagation from input buffers to critical memory sinks (`memcpy`, format strings) | Built-in taint tracer; [MCP Contracts](docs/mcp-contracts.md) |
+| **Cryptographic Hash Pre-states** | Inverts nonlinear bit-shift operations, checksums, and custom hashing loops to recover valid seeds | Z3 bit-vector solver; [SMT Solver Guide](docs/smt-branch-solving.md) |
+| **Bogus Control Flow (BCF)** | Proves invariant truth values for opaque predicates ($y^2 \ge 0$), eliminating dead loops and dummy blocks | Built-in SMT simplifier; [OLLVM Guide](docs/ollvm-unflattening.md) |
+| **Mobile Security SDKs** | Unflattens ARM64 root-detection and integrity-checking routines in Android `.so` and iOS Mach-O binaries | ARM64 backend with angr / Z3; [OLLVM Guide](docs/ollvm-unflattening.md) |
+| **WebAssembly Binaries** | Unflattens switch-heavy WASM dispatchers and normalizes structured `block`/`loop` control flow | Built-in WASM parser; [Target Matrix](docs/target-matrix.md) |
+
+---
+
+## 🌟 Showcases
+
+### Showcase 1: De-obfuscating an OLLVM-Protected Mobile Security SDK
+An Android native library `libsecurity.so` protected root-detection logic behind a 48-branch state machine switch dispatcher:
+- **SYMB Tool**: `unflatten_control_flow`
+- **Result**: Identified state variable in register `w19`, eliminated 38 bogus dispatcher edges, and restored the original 4-block linear authentication flow in 1.2 seconds.
+
+### Showcase 2: SMT Solving a 128-Bit Nonlinear License Algorithm
+A proprietary DRM validation routine performed 16 rounds of bit-rotations and modular arithmetic before checking against a target hash:
+- **SYMB Tool**: `solve_branch_reachability`
+- **Result**: Formulated 128-bit bit-vector constraints in Z3; discovered the exact valid serial key (`SYMB-7F89-A2C4-9981`) in 38.4 milliseconds without brute-force fuzzing.
+
+### Showcase 3: Zero-Disk In-Memory Trampoline in a Live Daemon
+A running Linux background service verified its own binary on disk via SHA256 before processing cryptographic payloads:
+- **SYMB Tool**: `hot_patch_live_memory`
+- **Result**: Allocated an executable trampoline in process memory, redirected the validation check in RAM, and extracted decrypted tokens without altering a single byte on disk.
+
+---
+
+## 🚀 Quickstart & Setup
+
+### 1. Interactive Setup Wizard
+Run the universal installer to automatically configure your AI agent environments:
 
 ```bash
 npx symb-agents setup
 ```
 
-Select your target agents (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, or **Codex**). SYMB automatically registers the MCP server into your agent configuration files.
+### 2. Manual Agent Configuration
 
-### 2. Asking Your Agent
+#### Claude Code (`~/.claude/config.json`)
+```json
+{
+  "mcpServers": {
+    "symb": {
+      "command": "npx",
+      "args": ["-y", "symb-agents", "serve"]
+    }
+  }
+}
+```
 
-Once registered, your agent can solve complex binary puzzles directly in chat:
+#### Cursor (`~/.cursor/mcp.json` or `.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "symb": {
+      "command": "node",
+      "args": ["/path/to/symb/dist/index.js"]
+    }
+  }
+}
+```
 
-```text
-User: "The license verification function at 0x00401500 in auth_core.exe is protected with OLLVM flattening. Unflatten it and solve for the valid 16-byte key that reaches 0x00401580."
-
-Agent: 
-⚡ [SYMB] Calling unflatten_control_flow(binary="auth_core.exe", func="0x401500")...
-⚡ [SYMB] Eliminating dispatcher at 0x401520. Reconstructed original CFG with 4 basic blocks.
-⚡ [SYMB] Calling solve_branch_reachability(target="0x401580", avoid=["0x401590"])...
-⚡ [SYMB] Z3 SMT solver converged in 1.4s. 
-
-Key solution found:
-ASCII: "K3Y-9842-AXQ-771"
-Hex: 4b 33 59 2d 39 38 34 32 2d 41 58 51 2d 37 37 31
+#### Antigravity / Gemini CLI (`antigravity.json`)
+```json
+{
+  "mcpServers": {
+    "symb": {
+      "command": "symb",
+      "args": ["serve"]
+    }
+  }
+}
 ```
 
 ---
 
-## 🏗️ Architecture
+## 🛠️ MCP Tool Reference
 
-```mermaid
-flowchart TD
-    User["👨‍💻 User Prompt in Agent UI"] --> Agent["🤖 AI Agent (Claude Code / Cursor / Antigravity)"]
-    Agent -->|"Model Context Protocol (stdio/JSON-RPC)"| SymbServer["⚡ SYMB MCP Server (TypeScript / Node.js)"]
-    
-    subgraph SymbCore ["🧠 SYMB Core Engine"]
-        SymbServer --> Bridge["Python Native IPC Bridge"]
-        Bridge --> Angr["🔬 angr Symbolic Execution Engine"]
-        Bridge --> Z3["📐 Z3 SMT Theorem Prover"]
-        Bridge --> Triton["⚡ Triton Dynamic Binary Analysis"]
-        Bridge --> Trampoline["💉 Live Process Memory Trampoline"]
-    end
-    
-    SymbCore -->|"Canonical Evidence Record (Facts + Solved Inputs)"| Agent
-    Agent -->|"Verified Solution / Unflattened Code"| User
-```
+SYMB implements 5 core symbolic tools via standard MCP JSON-RPC:
+
+| Tool Name | Key Arguments | Primary Capability |
+| :--- | :--- | :--- |
+| `unflatten_control_flow` | `binary_path`, `function_address`, `arch` | Deobfuscates OLLVM switch dispatchers, restores clean CFG |
+| `solve_branch_reachability` | `target_address`, `avoid_addresses`, `symbolic_vars` | Uses Z3 to solve for exact inputs reaching target branches |
+| `trace_symbolic_taint` | `source_address`, `sink_address`, `taint_var` | Verifies dataflow from untrusted input to memory sinks |
+| `devirtualize_bytecode_vm` | `vm_entry_address`, `bytecode_offset` | Lifts custom VM bytecode back to standard IR / C pseudocode |
+| `hot_patch_live_memory` | `target_pid`, `hook_address`, `patch_bytes_hex` | Injects zero-disk trampolines into running process RAM |
+
+Detailed JSON schemas and response contracts are documented in [docs/mcp-contracts.md](docs/mcp-contracts.md).
 
 ---
 
 ## 📦 Requirements
 
-- **Node.js**: `>= 18.0.0`
+- **Node.js**: `>= 18.0.0` (Verified on Node 20, 22, and 24)
 - **Python**: `>= 3.10`
-- **Native Solvers**: `pip install angr z3-solver triton` (SYMB's setup script can install these automatically).
+- **Native Solvers**: `pip install angr z3-solver triton` (The `npx symb-agents setup` wizard can configure these automatically).
 
 ---
 
-## 📖 Documentation
+## 📖 Documentation Index
 
+- [Target Analysis & Solving Matrix](docs/target-matrix.md)
+- [OLLVM Deobfuscation Guide](docs/ollvm-unflattening.md)
+- [SMT Branch Constraint Solving Guide](docs/smt-branch-solving.md)
+- [Zero-Disk Memory Trampolines Guide](docs/zero-disk-trampolines.md)
 - [MCP Tool Contracts & Evidence Schema](docs/mcp-contracts.md)
 - [Agent Integration Guide](docs/installation.md)
-- [Symbolic Engineering & Deobfuscation Guide](docs/symbolic-engineering-guide.md)
 - [Instructions for AI Agents](AGENTS.md)
-- [Contributing](CONTRIBUTING.md)
+- [Contributing Guidelines](CONTRIBUTING.md)
 - [Security Policy](SECURITY.md)
 
 ---

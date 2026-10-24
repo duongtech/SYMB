@@ -1,10 +1,12 @@
 <div align="center">
 
+<p align="center">
+  <img src="../assets/symb-banner.svg" alt="SYMB Banner" width="100%">
+</p>
+
 [English](../../README.md) · **Tiếng Việt**
 
-# SYMB: Kỹ thuật Dịch ngược Biểu trưng & Dỡ Mã Rối cho AI Agent
-
-### Một MCP Server duy nhất cho thực thi biểu trưng, dỡ mã làm rối OLLVM và giải phương trình ràng buộc nhị phân.
+### Một MCP Server duy nhất cho Thực thi Biểu trưng (Symbolic Execution), Gỡ rối OLLVM (Unflattening) và Giải ràng buộc SMT cho mọi tác vụ Dịch ngược và Tác nhân AI.
 
 [![npm version](https://img.shields.io/npm/v/symb-agents?style=flat-square&color=cb3837)](https://www.npmjs.com/package/symb-agents)
 [![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](../mcp-contracts.md)
@@ -24,79 +26,160 @@ npx symb-agents setup
 
 ---
 
+<p align="center">
+  <img src="../assets/symb-terminal-demo.svg" alt="SYMB Interactive Session" width="100%">
+</p>
+
+---
+
 ## ⚡ SYMB Là Gì?
 
-**SYMB** là một máy chủ Model Context Protocol (MCP) mã nguồn mở, nâng tầm các AI Agent (Claude Code, Cursor, Antigravity, Copilot, Codex) thành **những cỗ máy thực thi biểu trưng (Symbolic Execution), giải ràng buộc SMT, và dỡ bỏ mã làm rối luồng điều khiển (Deobfuscation) hoàn toàn tự động**.
+**SYMB** là một Model Context Protocol (MCP) Server tự động hóa, trao quyền cho các AI Agent hàng đầu hiện nay (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, **Copilot**, **Codex**) năng lực **Thực thi Biểu trưng (Symbolic Execution), Giải bài toán Ràng buộc SMT và Tự động Giải mã Làm rối Luồng điều khiển (CFG Deobfuscation)**.
 
-Trong khi các trình dịch ngược truyền thống chỉ dừng lại ở việc đọc cú pháp tĩnh, **SYMB trao cho AI Agent năng lực toán học chủ động**:
-- **Dỡ Phẳng Luồng Điều Khiển Biểu Trưng (Unflattening):** Quét sạch các kỹ thuật làm phẳng OLLVM / Obfuscator-LLVM, mở rộng các bẫy điều kiện giả, và tái cấu trúc lại đồ thị luồng điều khiển (CFG) sạch sẽ như ban đầu.
-- **Tự Động Giải Nghiệm SMT Nhánh:** Khám phá chính xác chuỗi byte đầu vào đưa luồng thực thi tới nhánh thành công mong muốn bằng sức mạnh của **angr** và **Z3 Theorem Prover**.
-- **Theo Dấu Vết Dữ Liệu Độc Hại (Taint Tracking):** Chứng minh toán học xem input người dùng có thể kích hoạt các điểm nghẽn bộ nhớ nhạy cảm hay không.
-- **Can Thiệp Bộ Nhớ Trực Tiếp (Hot-Patching):** Hook hàm và sửa đổi trực tiếp trong RAM (Zero-Disk) ngay từ giao diện chat của Agent.
+Trong khi các công cụ dịch ngược thụ động truyền thống chỉ trích xuất cú pháp hoặc mã giả tĩnh, **SYMB biến AI Agent thành một cỗ máy giải toán tự trị thực thụ**:
 
----
-
-## 🛠️ Danh Mục Công Cụ MCP
-
-SYMB cung cấp các công cụ MCP hiệu năng cao được thiết kế chuyên biệt cho AI Agent:
-
-### 1. `unflatten_control_flow`
-Phân tích biểu trưng kỹ thuật Control Flow Flattening (CFF) của OLLVM / Obfuscator-LLVM. Tự động nhận diện biến trạng thái (state variable), loại bỏ khối điều hướng rác (dispatcher block), mở rộng các bẫy điều kiện giả (opaque predicates), và tái cấu trúc lại mã nguồn C giả có cấu trúc rõ ràng.
-
-### 2. `solve_branch_reachability`
-Sử dụng `angr` và bộ chứng minh định lý `Z3 SMT Theorem Prover` để tìm chính xác chuỗi byte đầu vào đưa luồng thực thi đi thẳng tới địa chỉ mong muốn (như `SUCCESS`, `VALID_LICENSE`, `UNLOCKED`) và né tránh các nhánh báo lỗi.
-
-### 3. `trace_symbolic_taint`
-Thực hiện phân tích vết dữ liệu biểu trưng trên assembly gốc và WebAssembly. Kiểm tra xem dữ liệu do người dùng kiểm soát có thể tràn vào các điểm nhạy cảm (`memcpy`, `strcpy`, format strings, địa chỉ nhảy gián tiếp) hay không.
-
-### 4. `devirtualize_bytecode_vm`
-Nhận diện vòng lặp phân phối lệnh (Dispatcher) của các máy ảo tùy biến (custom bytecode). Phục hồi con trỏ lệnh ảo (VPC), bảng xử lý opcode, và nâng cấp tập lệnh ảo ngược về LLVM IR / C chuẩn.
-
-### 5. `hot_patch_live_memory`
-Thực hiện kỹ thuật tiêm trampoline và hook hàm trực tiếp trong bộ nhớ RAM của tiến trình đang chạy (Zero-Disk). Cho phép Agent thử nghiệm các thay đổi logic và mở khóa mà không cần ghi đè file trên ổ cứng.
+- **Tự động Gỡ phẳng Luồng điều khiển (OLLVM Unflattening):** Quét biến trạng thái (state variable), triệt tiêu các vòng lặp điều phối (switch dispatcher) của OLLVM/Hikari/Goron, khử vị từ mờ (opaque predicates) và khôi phục đồ thị luồng điều khiển (CFG) nguyên bản.
+- **Tự động Giải nhánh SMT (Automated Branch Solving):** Sử dụng **angr** và **Z3 Theorem Prover** để tính toán chính xác chuỗi byte đầu vào thỏa mãn các nhánh thành công (như `SUCCESS`, `VALID_LICENSE`, `UNLOCKED`) mà không cần fuzzing ngẫu nhiên.
+- **Theo vết Biểu trưng Nhiễm bẩn (Symbolic Taint Tracing):** Chứng minh toán học luồng dữ liệu không tin cậy có thể xâm nhập vào các điểm nguy hiểm (`memcpy`, format string, indirect call).
+- **Phẫu thuật Bộ nhớ Tiến trình Zero-Disk:** Tiêm hook và trampoline trực tiếp vào RAM của tiến trình đang chạy mà không làm thay đổi tệp nhị phân trên đĩa cứng, vượt qua các lớp bảo vệ kiểm tra mã băm (hash check/integrity).
 
 ---
 
-## 🚀 Hướng Dẫn Bắt Đầu Nhanh
+## 🌊 Cách Thức Hoạt Động Của SYMB
 
-### 1. Cài Đặt Vào Agent Trong 1 Bước
+<p align="center">
+  <img src="../assets/symb-solver-flow.svg" alt="SYMB Investigation Flow" width="100%">
+</p>
 
-Chạy lệnh hướng dẫn tương tác trong terminal của bạn:
+1. **Khởi tạo từ AI Agent**: Agent của bạn tiếp nhận yêu cầu phân tích binary hoặc giải bài toán và gọi SYMB qua giao thức chuẩn MCP JSON-RPC (stdio).
+2. **Xây dựng Cây Cú pháp Biểu trưng (AST)**: SYMB dịch các tập lệnh máy hoặc khối basic block bị làm rối sang biểu diễn trung gian (VEX/LLVM IR) và xây dựng biểu thức logic.
+3. **Giải Ràng buộc SMT**: Lõi Z3 và angr duyệt biểu trưng các đường dẫn thực thi, tích lũy điều kiện rẽ nhánh $\Phi$ và giải phương trình tìm nghiệm SAT.
+4. **Trả lời Dưới dạng Bằng chứng Chuẩn hóa (Canonical SymbEvidence)**: Phản hồi về Agent dưới dạng JSON chi tiết chứa bằng chứng toán học, đồ thị liên kết basic block và chuỗi payload thực tế.
+
+---
+
+## 🎯 Ma Trận Mục Tiêu & Năng Lực Giải Quyết
+
+SYMB yêu cầu Node.js 18+ và Python 3.10+ cùng các thư viện giải toán `z3-solver` và `angr`:
+
+| Mục tiêu & Thách thức | Những gì SYMB Phân tích & Trả về | Yêu cầu & Tài liệu hướng dẫn |
+| :--- | :--- | :--- |
+| **Làm rối Luồng điều khiển (OLLVM / CFF)** | Triệt tiêu vòng lặp switch dispatcher, loại bỏ các bước nhảy rác, khôi phục CFG tuyến tính và mã giả C sạch | Tích hợp sẵn angr / Z3 AST solver; [Hướng dẫn OLLVM](../ollvm-unflattening.md) |
+| **Giải Rẽ nhánh Phức tạp (SMT Branch Reachability)** | Chuỗi byte chính xác (ASCII, Hex) kích hoạt nhánh thành công và né tránh các nhánh báo lỗi | Z3 SMT Solver & angr; [Hướng dẫn SMT](../smt-branch-solving.md) |
+| **Máy ảo Tùy biến (Custom Bytecode VMs)** | Trích xuất con trỏ lệnh ảo (VPC), bảng phân phối opcode và dịch ngược mã byte ảo về LLVM IR / C | Tích hợp bộ giải biểu trưng; [Ma trận mục tiêu](../target-matrix.md) |
+| **Bộ nhớ Tiến trình Thời gian thực** | Tiêm hook và trampoline động trong RAM mà không chỉnh sửa file nhị phân trên đĩa (Zero-disk) | Quyền thực thi phù hợp (Admin/root); [Hướng dẫn Trampoline](../zero-disk-trampolines.md) |
+| **Phân tích Taint Biểu trưng** | Dò vết truyền dữ liệu từ bộ đệm đầu vào tới các hàm đích nguy hiểm (`memcpy`, format string) | Tích hợp công cụ Taint; [Đặc tả Hợp đồng MCP](../mcp-contracts.md) |
+| **Nghịch đảo Trạng thái Băm Mật mã** | Nghịch đảo các phép toán dịch bit phi tuyến, vòng lặp tính checksum tùy chỉnh để tìm seed ban đầu | Z3 bit-vector solver; [Hướng dẫn SMT](../smt-branch-solving.md) |
+| **Luồng Điều khiển Rác (Bogus Control Flow)** | Chứng minh tính bất biến của vị từ mờ ($y^2 \ge 0$), xóa bỏ các khối lệnh chết và vòng lặp vô nghĩa | Tích hợp SMT simplifier; [Hướng dẫn OLLVM](../ollvm-unflattening.md) |
+| **SDK Bảo mật Mobile** | Khôi phục luồng kiểm tra root và kiểm tra tính toàn vẹn bị làm rối trong file `.so` Android ARM64 | ARM64 backend với angr / Z3; [Hướng dẫn OLLVM](../ollvm-unflattening.md) |
+| **Mã nhị phân WebAssembly (WASM)** | Gỡ phẳng các bảng switch WASM phức tạp và chuẩn hóa cấu trúc `block`/`loop` | Trình phân tích WASM tích hợp; [Ma trận mục tiêu](../target-matrix.md) |
+
+---
+
+## 🌟 Tình Huống Thực Tế Điển Hình (Showcases)
+
+### Tình huống 1: Gỡ rối SDK Bảo mật Mobile bảo vệ bằng OLLVM
+Một thư viện native Android `libsecurity.so` giấu hàm kiểm tra thiết bị root sau một máy trạng thái 48 nhánh rẽ:
+- **Công cụ SYMB**: `unflatten_control_flow`
+- **Kết quả**: Phát hiện biến trạng thái nằm trong thanh ghi `w19`, loại bỏ 38 cạnh dispatch rác và khôi phục 4 khối lệnh xác thực ban đầu chỉ trong 1.2 giây.
+
+### Tình huống 2: Giải Ràng buộc SMT 128-bit cho Thuật toán Bản quyền
+Một hàm DRM thực hiện 16 vòng xoay bit và số học modulo trước khi so sánh với mã băm mục tiêu:
+- **Công cụ SYMB**: `solve_branch_reachability`
+- **Kết quả**: Thiết lập biểu thức bit-vector 128-bit trên Z3; tìm ra mã bản quyền hợp lệ (`SYMB-7F89-A2C4-9981`) trong 38.4 mili-giây mà không cần brute-force.
+
+### Tình huống 3: Tiêm Trampoline Bộ nhớ Không Ghi Đĩa (Zero-Disk) trong Live Daemon
+Một dịch vụ nền Linux tự kiểm tra mã băm SHA256 của file nhị phân trên đĩa trước khi xử lý token bảo mật:
+- **Công cụ SYMB**: `hot_patch_live_memory`
+- **Kết quả**: Cấp phát bộ đệm trampoline thực thi trong RAM, chuyển hướng luồng kiểm tra và trích xuất token giải mã mà không thay đổi bất kỳ byte nào trên file nhị phân gốc.
+
+---
+
+## 🚀 Cài Đặt & Khởi Động Nhanh
+
+### 1. Trình Thuật Sĩ Tự Động Thiết Lập
+Chạy lệnh sau trên terminal để tự động cấu hình các AI Agent của bạn:
 
 ```bash
 npx symb-agents setup
 ```
 
-Chọn các Agent bạn muốn tích hợp (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, hoặc **Codex**). SYMB sẽ tự động đăng ký cấu hình MCP.
+### 2. Cấu Hình Thủ Công Theo Từng Agent
 
-### 2. Hỏi Agent Của Bạn
-
-Sau khi cài đặt, bạn chỉ cần ra lệnh trong khung chat:
-
-```text
-User: "Hàm kiểm tra bản quyền tại 0x00401500 trong file auth_core.exe bị OLLVM làm phẳng luồng điều khiển. Dỡ rối cho tôi và tìm chuỗi key 16 byte để nhảy vào 0x00401580."
-
-Agent: 
-⚡ [SYMB] Đang gọi unflatten_control_flow(binary="auth_core.exe", func="0x401500")...
-⚡ [SYMB] Đã loại bỏ khối dispatcher tại 0x401520. Phục hồi đồ thị CFG nguyên bản với 4 basic blocks.
-⚡ [SYMB] Đang gọi solve_branch_reachability(target="0x401580", avoid=["0x401590"])...
-⚡ [SYMB] Z3 SMT solver hội tụ nghiệm sau 1.4s.
-
-Đã tìm thấy chuỗi nghiệm hợp lệ:
-ASCII: "K3Y-9842-AXQ-771"
-Hex: 4b 33 59 2d 39 38 34 32 2d 41 58 51 2d 37 37 31
+#### Claude Code (`~/.claude/config.json`)
+```json
+{
+  "mcpServers": {
+    "symb": {
+      "command": "npx",
+      "args": ["-y", "symb-agents", "serve"]
+    }
+  }
+}
 ```
+
+#### Cursor (`~/.cursor/mcp.json` hoặc `.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "symb": {
+      "command": "node",
+      "args": ["/đường/dẫn/đến/symb/dist/index.js"]
+    }
+  }
+}
+```
+
+#### Antigravity / Gemini CLI (`antigravity.json`)
+```json
+{
+  "mcpServers": {
+    "symb": {
+      "command": "symb",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+---
+
+## 🛠️ Danh Mục Công Cụ MCP
+
+SYMB cung cấp 5 công cụ biểu trưng cốt lõi qua giao thức chuẩn MCP:
+
+| Tên công cụ | Tham số chính | Chức năng cốt lõi |
+| :--- | :--- | :--- |
+| `unflatten_control_flow` | `binary_path`, `function_address`, `arch` | Gỡ rối OLLVM switch dispatcher, khôi phục CFG sạch |
+| `solve_branch_reachability` | `target_address`, `avoid_addresses`, `symbolic_vars` | Dùng Z3 giải chính xác dữ liệu đầu vào kích hoạt nhánh đích |
+| `trace_symbolic_taint` | `source_address`, `sink_address`, `taint_var` | Kiểm tra luồng dữ liệu từ input không tin cậy tới memory sink |
+| `devirtualize_bytecode_vm` | `vm_entry_address`, `bytecode_offset` | Dịch ngược mã byte máy ảo tùy biến về LLVM IR / C |
+| `hot_patch_live_memory` | `target_pid`, `hook_address`, `patch_bytes_hex` | Tiêm trampoline và hook động trực tiếp vào RAM tiến trình |
 
 ---
 
 ## 📦 Yêu Cầu Hệ Thống
 
-- **Node.js**: `>= 18.0.0`
+- **Node.js**: `>= 18.0.0` (Tương thích Node 20, 22, 24)
 - **Python**: `>= 3.10`
-- **Bộ giải toán**: `pip install angr z3-solver triton` (Script setup của SYMB có thể tự động cài đặt).
+- **Bộ Giải Toán Native**: `pip install angr z3-solver triton` (Thuật sĩ `npx symb-agents setup` có thể tự động cài đặt).
+
+---
+
+## 📖 Tài Liệu Tham Khảo
+
+- [Ma Trận Phân Tích & Giải Quyết Mục Tiêu](../target-matrix.md)
+- [Hướng Dẫn Gỡ Rối OLLVM](../ollvm-unflattening.md)
+- [Hướng Dẫn Giải Ràng Buộc Nhánh SMT](../smt-branch-solving.md)
+- [Hướng Dẫn Tiêm Trampoline Bộ Nhớ Zero-Disk](../zero-disk-trampolines.md)
+- [Đặc Tả Hợp Đồng Công Cụ MCP](../mcp-contracts.md)
+- [Hướng Dẫn Tích Hợp Cho Agent](../installation.md)
+- [Chỉ Dẫn Cho AI Agent](../../AGENTS.md)
+- [Chính Sách Đóng Góp](../../CONTRIBUTING.md)
+- [Chính Sách Bảo Mật](../../SECURITY.md)
 
 ---
 
 ## 📄 Bản Quyền
 
-Bản quyền mã nguồn MIT License © 2026 [duongtech](https://github.com/duongtech).
+Giấy phép MIT © 2026 [duongtech](https://github.com/duongtech).
