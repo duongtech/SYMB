@@ -48,3 +48,13 @@ export const CryptoScanInputSchema = z.object({
 export const ProtectionsScanInputSchema = z.object({
   binary_path: z.string().describe("Absolute path to target binary")
 });
+
+export const DecompileApkInputSchema = z.object({
+  target_path: z.string().describe("Absolute path to APK package (.apk) or Dalvik executable (.dex)"),
+  max_classes: z.number().default(15).describe("Maximum number of classes to lift into Java pseudocode")
+});
+
+export const DecryptStringsInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary (PE, ELF, APK, .so)"),
+  max_candidates: z.number().default(20).describe("Maximum number of decrypted candidate strings to return")
+});

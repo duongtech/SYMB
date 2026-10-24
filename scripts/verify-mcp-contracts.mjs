@@ -10,12 +10,24 @@ import {
   DecompileProgramInputSchema,
   InspectLayoutInputSchema,
   CryptoScanInputSchema,
-  ProtectionsScanInputSchema
+  ProtectionsScanInputSchema,
+  DecompileApkInputSchema,
+  DecryptStringsInputSchema
 } from "../dist/contracts/schemas.js";
 
 console.log(chalk.cyan.bold("\n📜 SYMB MCP TOOL SCHEMAS & CANONICAL EVIDENCE CONTRACTS VERIFICATION\n"));
 
 const schemas = [
+  {
+    name: "decompile_apk_package Schema",
+    schema: DecompileApkInputSchema,
+    sampleValid: { target_path: "app.apk", max_classes: 15 }
+  },
+  {
+    name: "decrypt_obfuscated_strings Schema",
+    schema: DecryptStringsInputSchema,
+    sampleValid: { binary_path: "payload.bin", max_candidates: 20 }
+  },
   {
     name: "decompile_native_function Schema",
     schema: DecompileInputSchema,
@@ -79,7 +91,7 @@ for (const s of schemas) {
 
 console.log("\n" + "─".repeat(50));
 if (allPassed) {
-  console.log(chalk.green.bold("★ ALL 9 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
+  console.log(chalk.green.bold("★ ALL 11 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
   process.exit(0);
 } else {
   console.log(chalk.red.bold("✖ MCP Schema verification errors encountered\n"));

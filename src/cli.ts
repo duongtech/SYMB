@@ -9,6 +9,8 @@ import { runInspectLayout } from "./core/layout.js";
 import { runCryptoScan } from "./core/crypto.js";
 import { runProtectionsScan } from "./core/protections.js";
 import { runUnflatten } from "./core/unflatten.js";
+import { runApkDecompile } from "./core/apk.js";
+import { runStringDecrypt } from "./core/strings_decrypt.js";
 
 const program = new Command();
 
@@ -164,6 +166,43 @@ program
     console.log(chalk.cyan(`\n🔄 Unflattening OLLVM state dispatcher at ${address} in ${binary}...`));
     try {
       const res = await runUnflatten(binary, address, parseInt(options.timeout, 10));
+      console.log(JSON.stringify(res, null, 2));
+    } catch (e: any) {
+      console.error(chalk.red(`Error: ${e.message}`));
+    }
+  });
+
+program
+  .command("apk <target>")
+  .description("Decompile Android APK / DEX packages, audit permissions, and reconstruct Java")
+  .option("-c, --max-classes <num>", "Maximum classes to decompile", "15")
+  .action(async (target, options) => {
+    console.log(chalk.cyan(`\n📱 Decompiling APK / DEX: ${target}...`));
+    try {
+      const res = await runApkDecompile(target, parseInt(options.maxClasses, 10));
+      console.log(chalk.green(`✔ Package: ${res.package_name}`));
+      console.log(chalk.green(`✔ Permissions (${res.permissions_count}):`), res.permissions);
+      if (res.security_audit_alerts?.length) {
+        console.log(chalk.red.bold(`⚠ Security Alerts:`), res.security_audit_alerts);
+      }
+      if (res.native_libraries?.length) {
+        console.log(chalk.yellow(`Native Shared Libraries:`), res.native_libraries);
+      }
+      console.log(chalk.bold.white("\nReconstructed Java Classes:\n" + res.reconstructed_java));
+    } catch (e: any) {
+      console.error(chalk.red(`Error: ${e.message}`));
+    }
+  });
+
+program
+  .command("decrypt-strings <binary>")
+  .description("Automated recovery of XOR, Rolling-Key, and Base64 encrypted strings")
+  .option("-m, --max-candidates <num>", "Max candidates", "20")
+  .action(async (binary, options) => {
+    console.log(chalk.cyan(`\n🔓 Decrypting obfuscated strings in ${binary}...`));
+    try {
+      const res = await runStringDecrypt(binary, parseInt(options.maxCandidates, 10));
+      console.log(chalk.green(`✔ Recovered ${res.total_encrypted_strings_recovered} encrypted strings, ${res.total_base64_strings_decoded} Base64 strings\n`));
       console.log(JSON.stringify(res, null, 2));
     } catch (e: any) {
       console.error(chalk.red(`Error: ${e.message}`));

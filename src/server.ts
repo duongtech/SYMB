@@ -13,7 +13,9 @@ import {
   DecompileProgramInputSchema,
   InspectLayoutInputSchema,
   CryptoScanInputSchema,
-  ProtectionsScanInputSchema
+  ProtectionsScanInputSchema,
+  DecompileApkInputSchema,
+  DecryptStringsInputSchema
 } from "./contracts/schemas.js";
 import { runUnflatten } from "./core/unflatten.js";
 import { runBranchSolver } from "./core/solver.js";
@@ -24,6 +26,8 @@ import { runDecompileProgram } from "./core/decompile_program.js";
 import { runInspectLayout } from "./core/layout.js";
 import { runCryptoScan } from "./core/crypto.js";
 import { runProtectionsScan } from "./core/protections.js";
+import { runApkDecompile } from "./core/apk.js";
+import { runStringDecrypt } from "./core/strings_decrypt.js";
 
 export function createSymbServer(): Server {
   const server = new Server(
@@ -42,6 +46,32 @@ export function createSymbServer(): Server {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
+        {
+          name: "decompile_apk_package",
+          description:
+            "Decompiles Android APK and DEX packages in milliseconds. Extracts AndroidManifest.xml permissions, activities, services, audits native .so binaries, and lifts Dalvik bytecode into clean Java class definitions.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              target_path: { type: "string", description: "Absolute path to APK package (.apk) or Dalvik executable (.dex)" },
+              max_classes: { type: "number", default: 15, description: "Maximum number of classes to lift into Java" }
+            },
+            required: ["target_path"]
+          }
+        },
+        {
+          name: "decrypt_obfuscated_strings",
+          description:
+            "Automated string deobfuscation engine. Brute-forces and solves Single-byte XOR, Multi-byte cycling XOR, Additive Rolling Key XOR [i ^ (k + i)], and Base64-encoded strings across PE, ELF, APK, and .so binaries.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary" },
+              max_candidates: { type: "number", default: 20, description: "Maximum recovered candidates" }
+            },
+            required: ["binary_path"]
+          }
+        },
         {
           name: "decompile_native_function",
           description:
@@ -177,6 +207,22 @@ export function createSymbServer(): Server {
 
     try {
       switch (name) {
+        case "decompile_apk_package": {
+          const parsed = DecompileApkInputSchema.parse(args);
+          const result = await runApkDecompile(parsed.target_path, parsed.max_classes);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case "decrypt_obfuscated_strings": {
+          const parsed = DecryptStringsInputSchema.parse(args);
+          const result = await runStringDecrypt(parsed.binary_path, parsed.max_candidates);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
         case "decompile_native_function": {
           const parsed = DecompileInputSchema.parse(args);
           const result = await runDecompile(
