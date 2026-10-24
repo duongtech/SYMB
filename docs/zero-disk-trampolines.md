@@ -8,26 +8,27 @@ When analyzing anti-tamper systems, binary integrity verifiers, or live game and
 
 ## 💉 Mechanics of Zero-Disk Trampolines
 
-```
-Target Function in Process RAM:
-+-------------------------------------------------------------+
-| 0x7FFF0010:  push rbp                                       |  <- Overwritten with
-| 0x7FFF0011:  mov rbp, rsp                                   |     JMP [Hook Address]
-| 0x7FFF0014:  sub rsp, 0x40                                  |  (5 to 14 bytes)
-+-------------------------------------------------------------+
-                               |
-                               v
-                     +-------------------+
-                     | SYMB Hook Payload | (Custom logic, loggers, bypasses)
-                     +-------------------+
-                               |
-                               v
-                     +-------------------+
-                     | Trampoline Buffer | (Original stolen bytes + JMP back)
-                     +-------------------+
-                               |
-                               v
-Target Function + Offset (Original execution resumes safely)
+```mermaid
+flowchart TD
+    subgraph Process_RAM ["Target Process Virtual Memory Space"]
+        direction TB
+        FuncEntry["Target Function Entry<br/><code>0x7FFF0010: push rbp; mov rbp, rsp</code>"]
+        Overwritten["Overwritten with 5-byte/14-byte DETOUR<br/><code>JMP [Hook Address]</code>"]
+        RemainingBytes["Remaining Function Body<br/><code>0x7FFF0015: sub rsp, 0x40 ...</code>"]
+    end
+
+    subgraph Injected_Hooks ["Zero-Disk Allocated Trampoline"]
+        direction TB
+        HookPayload["SYMB Custom Hook Payload<br/>(Logic bypass, token capture, logger)"]
+        TrampolineBuffer["Trampoline Buffer<br/>(Original Stolen Bytes: push rbp; mov rbp, rsp)"]
+        JmpBack["Jump Back Instruction<br/><code>JMP 0x7FFF0015</code>"]
+    end
+
+    FuncEntry -.-> Overwritten
+    Overwritten ==>|"Detour Redirect"| HookPayload
+    HookPayload --> TrampolineBuffer
+    TrampolineBuffer --> JmpBack
+    JmpBack ==>|"Resume Original Flow"| RemainingBytes
 ```
 
 1. **Virtual Memory Permission Management**:

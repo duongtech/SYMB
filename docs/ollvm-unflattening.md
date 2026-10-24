@@ -2,21 +2,27 @@
 
 Control Flow Flattening (CFF), popularized by Obfuscator-LLVM (OLLVM), Hikari, Goron, and Tigress, transforms a program's structured control flow (if/else, loops) into a flat state machine controlled by a central switch dispatcher.
 
-```
-       [Original CFG]                           [Flattened CFG]
-         +--------+                               +--------+
-         | Entry  |                               | Entry  | (Init state var)
-         +--------+                               +--------+
-          /      \                                    |
-         v        v                                   v
-      +----+    +----+                          +------------+
-      |BB1 |    |BB2 |                   +----->| Dispatcher |<----+
-      +----+    +----+                   |      +------------+     |
-         \        /                      |       /    |     \      |
-          v      v                       |      v     v      v     |
-         +--------+                      |   +---+  +---+  +---+   |
-         |  Exit  |                      +---|BB1|  |BB2|  |...|---+
-         +--------+                          +---+  +---+  +---+
+```mermaid
+flowchart TD
+    subgraph Original_CFG ["Original Structured CFG"]
+        direction TB
+        OrigEntry["Entry Block"] --> BB1["Basic Block 1"]
+        OrigEntry --> BB2["Basic Block 2"]
+        BB1 --> OrigExit["Exit Block"]
+        BB2 --> OrigExit
+    end
+
+    subgraph Flattened_CFG ["OLLVM Flattened State Machine"]
+        direction TB
+        FlatEntry["Entry (Init State Var)"] --> Dispatcher{"Central Switch Dispatcher"}
+        Dispatcher -->|"state == 1"| FlatBB1["Basic Block 1<br/>(state = 2)"]
+        Dispatcher -->|"state == 2"| FlatBB2["Basic Block 2<br/>(state = 3)"]
+        Dispatcher -->|"state == N"| MoreBB["Basic Block ..."]
+        FlatBB1 -->|"Back-edge jump"| Dispatcher
+        FlatBB2 -->|"Back-edge jump"| Dispatcher
+        MoreBB -->|"Back-edge jump"| Dispatcher
+        Dispatcher -->|"state == EXIT"| FlatExit["Exit Block"]
+    end
 ```
 
 ---
