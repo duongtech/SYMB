@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schema/server.json",
+  "name": "io.github.duongtech/symb",
+  "title": "SYMB: Symbolic Reverse Engineering & Deobfuscation",
+  "description": "One MCP server for symbolic execution, OLLVM unflattening, and Z3 constraint solving across binaries and runtimes. REA inspects the code. SYMB solves it.",
+  "websiteUrl": "https://github.com/duongtech/SYMB",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/duongtech/SYMB.git"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "symb-agents",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}
