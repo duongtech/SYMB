@@ -27,6 +27,12 @@ npx symb-agents setup
 ---
 
 <p align="center">
+  <img src="docs/assets/symb-hero-benchmark.svg" alt="SYMB vs REA Benchmark Matrix" width="100%">
+</p>
+
+---
+
+<p align="center">
   <img src="docs/assets/symb-terminal-demo.svg" alt="SYMB Interactive Session" width="100%">
 </p>
 
@@ -34,10 +40,13 @@ npx symb-agents setup
 
 ## ⚡ What is SYMB?
 
-**SYMB** is an autonomous Model Context Protocol (MCP) server that empowers AI Agents (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, **Copilot**, **Codex**) with **Symbolic Execution, SMT Constraint Solving, and Control-Flow Deobfuscation**.
+**SYMB** is an autonomous Model Context Protocol (MCP) server that empowers AI Agents (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, **Copilot**, **Codex**) with **Symbolic Execution, SMT Constraint Solving, 5-Pass Mobile APK/IPA Decompilation, and Control-Flow Deobfuscation**.
 
-While conventional disassemblers and decompilers only perform passive syntax inspection, **SYMB elevates AI agents into active mathematical solvers**:
+While conventional disassemblers and decompilers only perform passive syntax inspection or shell out to heavy external Java runtimes, **SYMB elevates AI agents with high-speed in-memory symbolic solvers**:
 
+- **5-Pass High-Speed Android APK & DEX Decompiler:** Pure native in-memory Dalvik lifter with X.509 signature verification (v1, v2, v3 schemes), hardcoded secret hunting, and native JNI security audits. Decompiles 33MB+ multi-DEX packages in under 3.5s with zero external Java dependencies.
+- **Apple iOS IPA & ARM64 Mach-O Decompiler:** Unpacks iOS IPA archives, detects FairPlay DRM encryption (`cryptid` in `LC_ENCRYPTION_INFO_64`), flags anti-jailbreak hooks (`/Applications/Cydia.app`, `ptrace(PT_DENY_ATTACH)`), and reconstructs Objective-C/Swift interfaces.
+- **Automated Obfuscated String Decryption:** Solves single-byte XOR, multi-byte cycling XOR, and additive rolling-key XOR `[i ^ (k + i)]` across raw binary sections.
 - **Symbolic Control-Flow Unflattening:** Eliminates OLLVM / Obfuscator-LLVM flattening, unrolls opaque predicates, and reconstructs clean, human-readable control flow graphs.
 - **Automated SMT Branch Solving:** Mathematically solves for exact byte-level inputs that drive execution to target success branches using **angr** and the **Z3 Theorem Prover**.
 - **Dynamic Symbolic Taint Tracking:** Proves whether attacker-controlled input data can propagate into dangerous memory sinks (`memcpy`, format strings, indirect calls).
@@ -64,6 +73,9 @@ SYMB requires Node.js 18+ and Python 3.10+ with `z3-solver` and `angr`:
 
 | Target & Challenge | What SYMB Solves & Returns | Requirements & Guide |
 | :--- | :--- | :--- |
+| **Android APK & Multi-DEX Packages** | 5-pass native decompilation: Dalvik to Java AST, X.509 signature schemes (v1/v2/v3), hardcoded secret hunting, and JNI .so audits | Built-in native lifter; zero Java dependencies |
+| **Apple iOS IPA & ARM64 Mach-O** | In-memory IPA analysis, FairPlay DRM detection (`cryptid`), anti-jailbreak hooks audit, Objective-C/Swift header recovery | Built-in Mach-O & Plist engine |
+| **Obfuscated Strings Recovery** | Solves Single-Byte XOR, Multi-Byte cycling XOR, and Additive Rolling-Key XOR across binary sections | Built-in crypto deobfuscator |
 | **Control-Flow Flattening (CFF)** | Eliminates switch dispatchers, removes bogus jumps, restores original linear CFG and clean C pseudocode | Built-in angr / Z3 engine; [OLLVM Guide](docs/ollvm-unflattening.md) |
 | **Complex Branch Reachability** | Computes the exact byte sequence (ASCII, Hex) that reaches success blocks while avoiding failure paths | Z3 SMT Solver & angr; [SMT Solver Guide](docs/smt-branch-solving.md) |
 | **Custom Bytecode VMs** | Recovers Virtual Program Counter (VPC), handler opcode jump tables, and lifts VM instructions to standard IR | Built-in symbolic tracer; [Target Matrix](docs/target-matrix.md) |

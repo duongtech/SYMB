@@ -175,19 +175,40 @@ program
 
 program
   .command("apk <target>")
-  .description("Decompile Android APK / DEX packages, audit permissions, and reconstruct Java")
+  .description("5-Pass High-Speed Android APK / DEX Decompiler and Security Suite")
   .option("-c, --max-classes <num>", "Maximum classes to decompile", "15")
   .action(async (target, options) => {
     console.log(chalk.cyan(`\n📱 Decompiling APK / DEX: ${target}...`));
     try {
       const res = await runApkDecompile(target, parseInt(options.maxClasses, 10));
       console.log(chalk.green(`✔ Package: ${res.package_name}`));
-      console.log(chalk.green(`✔ Permissions (${res.permissions_count}):`), res.permissions);
-      if (res.security_audit_alerts?.length) {
-        console.log(chalk.red.bold(`⚠ Security Alerts:`), res.security_audit_alerts);
+      if (res.passes_summary) {
+        console.log(chalk.bold.magenta("\n⚡ 5-Pass Decompilation Execution Summary:"));
+        console.log(chalk.blue(`  [Pass 1 Manifest]  : ${res.passes_summary.pass1_manifest}`));
+        console.log(chalk.blue(`  [Pass 2 Signature] : ${res.passes_summary.pass2_signature}`));
+        console.log(chalk.blue(`  [Pass 3 Dalvik AST]: ${res.passes_summary.pass3_dalvik_lifter}`));
+        console.log(chalk.blue(`  [Pass 4 Secrets]   : ${res.passes_summary.pass4_secret_hunt}`));
+        console.log(chalk.blue(`  [Pass 5 Native JNI]: ${res.passes_summary.pass5_native_jni}`));
+      }
+      if (res.signature_info) {
+        console.log(chalk.bold.yellow(`\n🔏 Signature & Keystore Integrity:`));
+        console.log(`  Signed: ${res.signature_info.is_signed} (v1: ${res.signature_info.schemes.v1}, v2: ${res.signature_info.schemes.v2}, v3: ${res.signature_info.schemes.v3})`);
+        res.signature_info.signers.forEach((s, idx) => {
+          console.log(`  Signer #${idx+1} SHA-256: ${s.cert_sha256}`);
+          console.log(`  Subject DN: ${s.subject_dn}`);
+        });
+      }
+      if (res.vulnerabilities?.length) {
+        console.log(chalk.red.bold(`\n⚠ Detected Vulnerabilities (${res.vulnerabilities.length}):`));
+        res.vulnerabilities.forEach(v => {
+          console.log(chalk.red(`  [${v.severity}] ${v.id}: ${v.title} - ${v.description}`));
+        });
       }
       if (res.native_libraries?.length) {
-        console.log(chalk.yellow(`Native Shared Libraries:`), res.native_libraries);
+        console.log(chalk.yellow(`\nNative Shared Libraries (${res.native_libraries.length}):`));
+        res.native_libraries.forEach(lib => {
+          console.log(`  ${lib.path} (${lib.arch}, ${lib.size_bytes} bytes) - JNI Exports: ${lib.jni_exports.join(", ") || "None"}`);
+        });
       }
       console.log(chalk.bold.white("\nReconstructed Java Classes:\n" + res.reconstructed_java));
     } catch (e: any) {

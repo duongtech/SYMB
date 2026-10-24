@@ -1,53 +1,79 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 580" width="100%" height="580">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 620" width="920" height="620" style="background:#090d16; font-family:'Fira Code',Menlo,Monaco,Consolas,'Courier New',monospace;">
   <defs>
     <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
       <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000" flood-opacity="0.6"/>
     </filter>
   </defs>
 
-  <!-- Terminal Window Background -->
-  <rect x="20" y="20" width="960" height="540" rx="12" fill="#0b0f19" stroke="#1e293b" stroke-width="1.5" filter="url(#shadow)"/>
+  <!-- Terminal Window Outer Container -->
+  <rect x="25" y="20" width="870" height="575" rx="14" fill="#0d1117" stroke="#30363d" stroke-width="1.5" filter="url(#shadow)" />
 
-  <!-- Window Titlebar -->
-  <path d="M 20 32 Q 20 20 32 20 L 968 20 Q 980 20 980 32 L 980 58 L 20 58 Z" fill="#111827"/>
-  <circle cx="48" cy="39" r="6" fill="#ef4444"/>
-  <circle cx="68" cy="39" r="6" fill="#f59e0b"/>
-  <circle cx="88" cy="39" r="6" fill="#10b981"/>
-  <text x="500" y="44" fill="#94a3b8" font-family="Courier New, monospace" font-size="13" font-weight="600" text-anchor="middle">symb-agent-session :: z3-solver-engine</text>
+  <!-- Terminal Title Bar -->
+  <rect x="25" y="20" width="870" height="42" rx="14" fill="#161b22" />
+  <rect x="25" y="50" width="870" height="12" fill="#161b22" />
+  <line x1="25" y1="62" x2="895" y2="62" stroke="#21262d" stroke-width="1" />
+
+  <!-- Window Dots -->
+  <circle cx="50" cy="41" r="6.5" fill="#ff5f56" stroke="#e0443e" stroke-width="0.5" />
+  <circle cx="70" cy="41" r="6.5" fill="#ffbd2e" stroke="#dea123" stroke-width="0.5" />
+  <circle cx="90" cy="41" r="6.5" fill="#27c93f" stroke="#1aab29" stroke-width="0.5" />
+
+  <text x="460" y="46" fill="#8b949e" font-size="12" font-weight="600" text-anchor="middle">symb-cli — bash — 80x24</text>
 
   <!-- Terminal Content -->
-  <g transform="translate(45, 90)" font-family="Courier New, monospace" font-size="13.5" xml:space="preserve">
-    <!-- Prompt 1 -->
-    <text x="0" y="0" fill="#38bdf8" font-weight="bold">user@claude-code:~$</text>
-    <text x="180" y="0" fill="#f8fafc">npx symb-agents setup --client claude-code</text>
+  <g transform="translate(50, 95)" font-size="13" font-family="'Fira Code',Menlo,Monaco,Consolas,monospace">
+    <!-- Command Line -->
+    <text x="0" y="0">
+      <tspan fill="#34d399" font-weight="700">user@agent-node</tspan><tspan fill="#64748b">:</tspan><tspan fill="#60a5fa">~/SYMB</tspan><tspan fill="#f8fafc">$ symb apk examples/04_apk_sample/Termux.apk</tspan>
+    </text>
 
-    <!-- Output 1 -->
-    <text x="0" y="26" fill="#10b981">[ok] SYMB MCP registered in ~/.claude/config.json</text>
-    <text x="0" y="48" fill="#64748b">---</text>
+    <!-- Header Output -->
+    <text x="0" y="30" fill="#38bdf8" font-weight="700">📱 SYMB HIGH-SPEED 5-PASS APK &amp; DEX DECOMPILER SUITE</text>
+    <text x="0" y="52" fill="#34d399">✔ Target: Termux.apk (33.1 MB) — In-Memory Processing Time: 3.18s</text>
+    <text x="0" y="74" fill="#34d399">✔ Multi-DEX Architecture: 27 DEX files • 8,144 Classes Discovered</text>
 
-    <!-- Prompt 2: Agent Action -->
-    <text x="0" y="74" fill="#a855f7" font-weight="bold">Claude Code &gt;</text>
-    <text x="135" y="74" fill="#e2e8f0">Analyzing target binary: libcore_security.so (OLLVM Flattened)</text>
+    <!-- 5-Pass Execution Summary -->
+    <text x="0" y="104" fill="#e879f9" font-weight="700">⚡ 5-Pass Multi-Stage Decompilation &amp; Audit Execution:</text>
     
-    <text x="0" y="104" fill="#00d4aa">▶ mcp.call("unflatten_cfg", {</text>
-    <text x="20" y="126" fill="#94a3b8">  "binary_path": "libcore_security.so",</text>
-    <text x="20" y="148" fill="#94a3b8">  "function_address": "0x4012A0",</text>
-    <text x="20" y="170" fill="#94a3b8">  "arch": "x86_64"</text>
-    <text x="0" y="192" fill="#00d4aa">})</text>
+    <text x="15" y="126" fill="#60a5fa">  [Pass 1 Manifest]  :</text>
+    <text x="210" y="126" fill="#e2e8f0">Extracted 16 permissions, 7 activities, 2 services</text>
 
-    <text x="0" y="222" fill="#38bdf8">[SYMB_CORE] Dissecting state variable switch dispatcher at 0x4012A0...</text>
-    <text x="0" y="244" fill="#f1f5f9">[SYMB_CORE] Detected state var: [rbp-0x18] | Recovered 14 relevant basic blocks</text>
-    <text x="0" y="266" fill="#f1f5f9">[SYMB_CORE] Eliminating 38 bogus switch edges... Linear CFG synthesized!</text>
-    <text x="0" y="288" fill="#10b981">✔ Unflattening status: SUCCESS (Recovered branch: 0x4014F2 -> 0x401620)</text>
+    <text x="15" y="148" fill="#60a5fa">  [Pass 2 Signature] :</text>
+    <text x="210" y="148" fill="#34d399">APK Scheme v2 Verified ✔ (SHA-256: b6da01480eef...)</text>
 
-    <!-- Prompt 3: SMT Solve -->
-    <text x="0" y="322" fill="#00d4aa">▶ mcp.call("solve_branch_constraints", {</text>
-    <text x="20" y="344" fill="#94a3b8">  "target_address": "0x401620",</text>
-    <text x="20" y="366" fill="#94a3b8">  "symbolic_variables": ["license_key", "checksum"]</text>
-    <text x="0" y="388" fill="#00d4aa">})</text>
+    <text x="15" y="170" fill="#60a5fa">  [Pass 3 Dalvik AST]:</text>
+    <text x="210" y="170" fill="#e2e8f0">Dalvik Bytecode &amp; CFG lifted into clean Java AST</text>
 
-    <text x="0" y="416" fill="#38bdf8">[Z3_SOLVER] Constructing bit-vector AST: 128-bit nonlinear equation set</text>
-    <text x="0" y="438" fill="#10b981">✔ Z3 Status: SAT (Solved in 38.4ms) | Confidence: 1.00</text>
-    <text x="0" y="460" fill="#f59e0b">★ Concrete Solution: license_key = "SYMB-7F89-A2C4-9981" (Checksum: 0xDEADBEEF)</text>
+    <text x="15" y="192" fill="#60a5fa">  [Pass 4 Secrets]   :</text>
+    <text x="210" y="192" fill="#34d399">Scanned 12,992 strings pool — 0 credential leakages</text>
+
+    <text x="15" y="214" fill="#60a5fa">  [Pass 5 Native JNI]:</text>
+    <text x="210" y="214" fill="#e2e8f0">Audited 2 ARM64 .so libraries • 6 JNI exports resolved</text>
+
+    <!-- Separator -->
+    <line x1="0" y1="236" x2="820" y2="236" stroke="#21262d" stroke-width="1" />
+
+    <!-- Decompiled Java Preview -->
+    <text x="0" y="260" fill="#fbbf24" font-weight="700">Reconstructed Java Source (Dalvik AST Output):</text>
+
+    <g transform="translate(10, 280)" font-size="12">
+      <rect x="-10" y="-14" width="820" height="175" rx="6" fill="#090d16" stroke="#1f2937" stroke-width="1" />
+      <text x="0" y="5" fill="#f43f5e">package <tspan fill="#f8fafc">com.termux.app.activities;</tspan></text>
+      <text x="0" y="25" fill="#f43f5e">public class <tspan fill="#38bdf8">HelpActivity</tspan> <tspan fill="#f43f5e">extends</tspan> <tspan fill="#38bdf8">android.app.Activity</tspan> {</text>
+      <text x="20" y="45" fill="#f43f5e">    public void <tspan fill="#60a5fa">onCreate</tspan>() {</text>
+      <text x="40" y="65" fill="#f8fafc">        <tspan fill="#38bdf8">StringBuilder</tspan> v1 = <tspan fill="#f43f5e">new</tspan> <tspan fill="#38bdf8">StringBuilder</tspan>();</text>
+      <text x="40" y="85" fill="#f8fafc">        v1.<tspan fill="#60a5fa">append</tspan>(<tspan fill="#a3e635">"https://termux.dev/en/"</tspan>);</text>
+      <text x="40" y="105" fill="#f43f5e">        if <tspan fill="#f8fafc">(v0 != 0) {</tspan></text>
+      <text x="60" y="125" fill="#64748b">            // Branch target: WebSettings configuration</text>
+      <text x="40" y="145" fill="#f8fafc">        }</text>
+      <text x="40" y="165" fill="#f43f5e">        return;</text>
+      <text x="20" y="185" fill="#f8fafc">    }</text>
+      <text x="0" y="205" fill="#f8fafc">}</text>
+    </g>
+
+    <!-- Cursor -->
+    <text x="0" y="475">
+      <tspan fill="#34d399" font-weight="700">user@agent-node</tspan><tspan fill="#64748b">:</tspan><tspan fill="#60a5fa">~/SYMB</tspan><tspan fill="#f8fafc">$ </tspan><tspan fill="#34d399">█</tspan>
+    </text>
   </g>
 </svg>

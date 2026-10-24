@@ -5,6 +5,46 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+export interface ApkSignatureSigner {
+  cert_sha256: string;
+  cert_sha1: string;
+  subject_dn: string;
+  issuer_dn: string;
+  validity: string;
+}
+
+export interface ApkSignatureInfo {
+  schemes: {
+    v1: boolean;
+    v2: boolean;
+    v3: boolean;
+  };
+  is_signed: boolean;
+  is_debug_keystore: boolean;
+  signers: ApkSignatureSigner[];
+}
+
+export interface ApkVulnerability {
+  id: string;
+  title: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  description: string;
+}
+
+export interface ApkSecretFinding {
+  type: string;
+  match: string;
+  severity: string;
+}
+
+export interface ApkNativeLibrary {
+  path: string;
+  size_bytes: number;
+  arch: string;
+  jni_exports: string[];
+  anti_debug_hooks: string[];
+}
+
 export interface ApkDecompileResult {
   target: string;
   is_apk: boolean;
@@ -14,16 +54,24 @@ export interface ApkDecompileResult {
   permissions: string[];
   activities: string[];
   services: string[];
-  native_libraries: Array<{
-    path: string;
-    size_bytes: number;
-    arch: string;
-  }>;
+  receivers?: string[];
+  providers?: string[];
+  native_libraries: ApkNativeLibrary[];
   total_dex_files: number;
   total_classes_found: number;
   security_audit_alerts: string[];
+  vulnerabilities?: ApkVulnerability[];
+  signature_info?: ApkSignatureInfo;
+  secret_hunting_results?: ApkSecretFinding[];
   sample_string_constants: string[];
   reconstructed_java: string;
+  passes_summary?: {
+    pass1_manifest: string;
+    pass2_signature: string;
+    pass3_dalvik_lifter: string;
+    pass4_secret_hunt: string;
+    pass5_native_jni: string;
+  };
   error?: string;
 }
 
