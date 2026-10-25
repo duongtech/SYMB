@@ -77,3 +77,4 @@ scratch_test_intervention/
 *.patched.*
 *.licensed_bypassed.*
 *.antidebug_patched.*
+test_sample_apk.mjs
