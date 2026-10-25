@@ -164,6 +164,9 @@ SYMB implements 15 high-speed native reversing tools via standard MCP JSON-RPC:
 
 | Tool Name | Key Arguments | Primary Capability |
 | :--- | :--- | :--- |
+| `optimize_large_media_buffer` | `file_path`, `target_max_mb` | High-capacity media & raw binary buffer processor for AI Agents. Extracts isolated audio (.m4a/.mp3), downsamples oversized videos (<= 50MB), extracts keyframes with typography safe zones, and streams multi-GB dumps via zero-RAM mmap |
+| `scan_byte_entropy` | `binary_path`, `block_size` | 256-byte sliding window Shannon entropy heatmap generator. Detects encrypted shellcode, cryptor payloads, and compressed overlays with visual ANSI distribution |
+| `trace_binary_xrefs` | `binary_path`, `limit` | Maps whole-program call graph edges, indirect calls, and resolves cross-references (XREFs) between code addresses and string literals |
 | `decompile_ios_ipa_package` | `target_path` | Decompiles Apple iOS IPA packages & ARM64 Mach-O binaries. Audits FairPlay DRM (cryptid), Anti-Jailbreak hooks, and reconstructs Objective-C / Swift interfaces |
 | `decompile_apk_package` | `target_path`, `max_classes` | Decompiles Android APK and DEX files in milliseconds. Extracts manifest permissions, audits native .so libraries, and lifts Dalvik bytecode to Java classes |
 | `decrypt_obfuscated_strings` | `binary_path`, `max_candidates` | Automated string deobfuscation engine. Solves Single-byte XOR, Multi-byte cycling XOR, Rolling Key XOR, and Base64 across PE, ELF, APK, and .so binaries |
@@ -178,6 +181,64 @@ SYMB implements 15 high-speed native reversing tools via standard MCP JSON-RPC:
 | `hot_patch_live_memory` | `pid`, `memory_address`, `patch_bytes_hex` | Injects zero-disk trampolines into running process RAM without disk modification |
 
 ---
+
+---
+
+## 🎬 High-Capacity Media & Raw Buffer Optimizer for AI Agents
+
+AI Agents frequently crash with **"temporary processing memory exhausted"** or context window overflow when users upload large screen recordings, podcasts, instructional videos (e.g. `.mp4`, `.mov`), or multi-gigabyte memory dumps.
+
+SYMB integrates a dedicated hardware-accelerated media and zero-RAM memory-mapped buffer engine:
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                      SYMB LARGE MEDIA & BUFFER OPTIMIZATION PIPELINE                   │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                        │
+│   Oversized Input File (100MB - 5GB)                                                   │
+│   [ Video: .mp4 / .mov / .mkv ] ────► [ FFmpeg Hardware Extraction ]                   │
+│                                           │                                            │
+│                                           ├──► Isolated Audio Track (.m4a/.mp3)        │
+│                                           │    (95% context reduction for STT/whisper) │
+│                                           │                                            │
+│                                           ├──► Smart Video Downsampler (<= 50MB)       │
+│                                           │    (Fits standard agent memory budget)     │
+│                                           │                                            │
+│                                           └──► Keyframe Storyboard & Safe-Zone Spec    │
+│                                                (Avoids top header text covering faces) │
+│                                                                                        │
+│   [ Raw Binary / Memory Dump (.bin/.dmp) ] ──► Zero-RAM mmap Chunked Streaming         │
+│                                                (Streams gigabyte files with 0MB heap)  │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### CLI Quick Start
+```bash
+# Optimize large video and extract isolated audio + keyframe storyboard
+symb optimize-media ./path/to/large_video.mp4 --target-mb 50
+
+# Map and stream multi-gigabyte raw memory dump without loading into RAM
+symb optimize-media ./dumps/system_crash.dmp --target-mb 20
+```
+
+### Response Example
+```json
+{
+  "status": "SUCCESS",
+  "file_type": "VIDEO_MEDIA",
+  "original_size_mb": 184.2,
+  "target_max_mb": 50,
+  "is_downsampled": true,
+  "optimized_size_mb": 42.1,
+  "isolated_audio_track": {
+    "path": "/path/to/extracted_audio.m4a",
+    "size_mb": 3.8,
+    "note": "Use this audio track for speech recognition to save 95% of agent context memory."
+  },
+  "extracted_keyframes_count": 5,
+  "agent_guidance": "Video optimized successfully within target budget."
+}
+```
 
 ## 💻 Standalone Command-Line Interface (CLI)
 

@@ -54,6 +54,7 @@
     "verify:z3": "node scripts/verify-z3-solver.mjs",
     "verify:ollvm": "node scripts/verify-ollvm-unflatten.mjs",
     "verify:branch": "node scripts/verify-smt-branch.mjs",
+    "verify:media": "node scripts/verify-media-optimizer.mjs",
     "verify:contracts": "node scripts/verify-mcp-contracts.mjs",
     "test": "node scripts/verify-all.mjs",
     "lint": "oxlint src"

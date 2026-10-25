@@ -12,7 +12,8 @@ const suites = [
   { name: "Native High-Speed EXE Decompiler & Layout Engine", script: "scripts/verify-decompiler.mjs" },
   { name: "Z3 SMT Mathematical Logic Engine", script: "scripts/verify-z3-solver.mjs" },
   { name: "OLLVM Control-Flow Unflattening (PE & ELF)", script: "scripts/verify-ollvm-unflatten.mjs" },
-  { name: "SMT Branch Reachability Solver", script: "scripts/verify-smt-branch.mjs" }
+  { name: "SMT Branch Reachability Solver", script: "scripts/verify-smt-branch.mjs" },
+  { name: "Large Media & Binary Buffer Optimizer Engine", script: "scripts/verify-media-optimizer.mjs" }
 ];
 
 let failedCount = 0;
