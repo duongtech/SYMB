@@ -1,7 +1,7 @@
 {
   "name": "symb-agents",
-  "version": "1.0.0",
-  "description": "Symbolic Reverse Engineering & Deobfuscation for AI Agents. One MCP for OLLVM unflattening, Z3 constraint solving, and binary reachability.",
+  "version": "2.0.0",
+  "description": "Symbolic Reverse Engineering & Active Binary Intervention for AI Agents. 20 native MCP tools for OLLVM unflattening, Z3 constraint solving, binary patching, and anti-debug neutralization.",
   "main": "dist/index.js",
   "type": "module",
   "bin": {

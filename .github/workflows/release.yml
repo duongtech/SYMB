@@ -48,7 +48,7 @@ jobs:
       - name: Build TypeScript & Bundles
         run: npm run build
 
-      - name: Run Full 6-Stage Verification Suite
+      - name: Run Full 8-Stage Verification Suite & Vitest
         run: npm test
 
       - name: Pack Distribution Bundles
@@ -61,7 +61,7 @@ jobs:
       - name: Create Official GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "SYMB Titan ${{ github.ref_name }} — Autonomous Symbolic Execution & Decompiler Engine"
+          name: "SYMB Titan ${{ github.ref_name }} — Autonomous Symbolic Execution & Active Binary Intervention Engine"
           tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
@@ -69,55 +69,51 @@ jobs:
           files: |
             release-dist/*
           body: |
-            # 🚀 SYMB Titan ${{ github.ref_name }}
+            # 🚀 SYMB Titan ${{ github.ref_name }} — Major Architectural Release
 
-            **Production-Grade Symbolic Reverse Engineering, Deobfuscation & Constraint Solving for AI Agents.**
-            One autonomous MCP server and CLI for OLLVM unflattening, Z3 SMT constraint solving, binary reachability, multi-platform decompilation (PE, ELF, APK, iOS IPA), and large media buffer optimization.
+            **Production-Grade Symbolic Reverse Engineering, Deobfuscation & Active Binary Intervention for AI Agents.**
+            One autonomous MCP server and CLI for OLLVM unflattening, Z3 SMT constraint solving, binary reachability, multi-platform decompilation (PE, ELF, APK, iOS IPA), dynamic binary patching, anti-debug neutralization, and large media buffer optimization.
 
             ---
 
-            ### 🌟 Key Highlights & Architectural Capabilities
+            ### ⚔️ What's New in v2.0.0: Active Binary Intervention Arsenal (Surpassing Passive RE Tools)
+            Mainstream reverse engineering assistants (such as REA) remain passive observers that refuse to modify binaries or bypass security controls. SYMB v2.0.0 introduces automated active binary intervention:
 
-            1. **15 Native MCP Tools Spec-Compliant**:
-               - `optimize_large_media_buffer`: High-capacity media & raw binary buffer processor for AI Agents (FFmpeg audio extraction, video downsampling, and zero-RAM `mmap` binary streaming).
-               - `decompile_entire_program` & `decompile_native_function`: High-speed native x86/x64 C pseudocode lifting with PLT/IAT stub resolution.
-               - `decompile_apk_package`: 5-pass Dalvik/DEX decompiler reconstructing readable Java class structures.
-               - `decompile_ios_ipa_package`: iOS Mach-O IPA extractor with FairPlay DRM cryptid detection and anti-jailbreak auditing.
+            1. **`patch_binary_executable`**: Surgical disk binary patcher with RVA-to-Raw conversion, arbitrary hex byte modification, automatic backup creation, and automated PE CheckSum recalculation.
+            2. **`neutralize_anti_debugging`**: Proactive anti-debug eliminator that scans and NOPs out inline RDTSC timing traps, INT 2D/3 traps, and PEB `BeingDebugged` checks on disk.
+            3. **`bypass_license_authorization`**: SMT-assisted license logic analyzer that computes branch condition inversions (`JE` <-> `JNE`, force `JMP`) and outputs patched binaries.
+            4. **`generate_frida_instrumentation`**: Automated Frida script synthesizer for Universal Android SSL Unpinning, RootBeer cloaking, and Windows native API hooks.
+            5. **`hot_patch_live_memory`**: Atomic zero-disk memory trampolines via Win32 VirtualProtectEx / Linux `/proc/pid/mem`.
+
+            ---
+
+            ### 🌟 Key Highlights & Full Catalog (20 Native MCP Tools)
+
+            1. **Active Binary Intervention**:
+               - `neutralize_anti_debugging`, `bypass_license_authorization`, `patch_binary_executable`, `generate_frida_instrumentation`, `hot_patch_live_memory`
+            2. **Symbolic Deobfuscation & SMT Solvers**:
                - `unflatten_control_flow`: Automated OLLVM Control Flow Flattening (CFF) dispatcher bypass and basic block unscrambler across PE & ELF.
                - `solve_branch_reachability`: SMT constraint solver calculating valid inputs to reach deep binary code branches.
                - `trace_symbolic_taint`: Inter-procedural symbolic taint tracker from sources to security sinks.
+            3. **Multi-Platform Decompilers & Unpackers**:
+               - `dynamically_unpack_binary`: Unicorn CPU emulation unpacker with OEP tail jump detection.
+               - `decompile_entire_program` & `decompile_native_function`: High-speed native x86/x64 C pseudocode lifting with PLT/IAT stub resolution.
+               - `decompile_apk_package`: 5-pass Dalvik/DEX decompiler reconstructing readable Java class structures.
+               - `decompile_ios_ipa_package`: iOS Mach-O IPA extractor with FairPlay DRM cryptid detection and anti-jailbreak auditing.
+            4. **Deep Binary Auditing & Buffers**:
                - `detect_binary_protections`: Static anti-debug, anti-hook, and timing trap detector with heuristic risk scoring.
                - `decrypt_obfuscated_strings`: Automated rolling XOR and multi-layer encoded string recovery.
                - `detect_crypto_primitives`: Cryptographic S-box, AES/DES tables, and constant scanner.
                - `scan_byte_entropy`: 256-byte sliding window Shannon entropy heatmap for cryptor/packer identification.
                - `trace_binary_xrefs`: Whole-binary call graph and string cross-reference resolver.
                - `inspect_binary_layout`: Multi-format header and section analyzer (PE, ELF, Mach-O, DEX).
-               - `hot_patch_live_memory`: Process memory patcher with trampoline generation.
-
-            2. **Pure Mathematical Rigor**:
-               - Integrated with **Z3 Theorem Prover 5.3.1**, **angr 10.0.5**, **Unicorn 2.1.4**, and **Capstone 5.0.7**.
-
-            3. **Installation & Quick Start**:
-               ```bash
-               # Install CLI globally
-               npm install -g symb-agents
-
-               # Run automated environment setup
-               symb setup
-
-               # Audit local solver capabilities
-               symb audit
-
-               # Optimize large videos/buffers for AI Agents
-               symb optimize-media <video.mp4> --target-mb 50
-               ```
+               - `optimize_large_media_buffer`: High-capacity media & raw binary buffer processor for AI Agents (FFmpeg audio extraction, video downsampling, and zero-RAM `mmap` binary streaming).
 
             ---
 
-            ### 📦 Release Assets
-            - Standalone NPM package tarball (`.tgz`)
-            - Full source and pre-compiled engine bundle (`.tar.gz` and `.zip`)
-            - 100% verified across 6 comprehensive verification test suites.
+            ### 🧪 Verification & Evidence Contracts
+            - **100% Pass** across 4 Vitest unit/integration test suites and 8 comprehensive verification runner suites.
+            - Full canonical **SymbEvidence** contracts with Target Identity (SHA-256, MD5 digests), Engine Provenance, and fail-closed safety.
 
       - name: Publish to GitHub Packages
         continue-on-error: true
