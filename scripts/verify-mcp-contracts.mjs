@@ -17,7 +17,11 @@ import {
   EntropyScanInputSchema,
   XrefAnalysisInputSchema,
   OptimizeMediaInputSchema,
-  DynamicallyUnpackInputSchema
+  DynamicallyUnpackInputSchema,
+  AntiDebugInputSchema,
+  LicenseBypassInputSchema,
+  FridaHookInputSchema,
+  BinaryPatchInputSchema
 } from "../dist/contracts/schemas.js";
 
 console.log(chalk.cyan.bold("\n📜 SYMB MCP TOOL SCHEMAS & CANONICAL EVIDENCE CONTRACTS VERIFICATION\n"));
@@ -102,6 +106,31 @@ const schemas = [
     name: "hot_patch_live_memory Schema",
     schema: HotPatchInputSchema,
     sampleValid: { pid: 1337, memory_address: "0x7FFF0010", patch_bytes_hex: "909090" }
+  },
+  {
+    name: "neutralize_anti_debugging Schema",
+    schema: AntiDebugInputSchema,
+    sampleValid: { binary_path: "target.exe", auto_patch: true, output_path: "target.patched.exe" }
+  },
+  {
+    name: "bypass_license_authorization Schema",
+    schema: LicenseBypassInputSchema,
+    sampleValid: { binary_path: "target.exe", force_success: true, apply_to_file: true }
+  },
+  {
+    name: "generate_frida_instrumentation Schema",
+    schema: FridaHookInputSchema,
+    sampleValid: { target: "com.example.app", platform: "android", script_type: "ssl_unpinning" }
+  },
+  {
+    name: "patch_binary_executable Schema",
+    schema: BinaryPatchInputSchema,
+    sampleValid: {
+      binary_path: "target.exe",
+      patches: [{ offset: 0x1000, bytes_hex: "90 90", description: "NOP trap" }],
+      create_backup: true,
+      recalculate_pe_checksum: true
+    }
   }
 ];
 
@@ -121,7 +150,7 @@ for (const s of schemas) {
 
 console.log("\n" + "─".repeat(50));
 if (allPassed) {
-  console.log(chalk.green.bold("★ ALL 16 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
+  console.log(chalk.green.bold(`★ ALL ${schemas.length} MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n`));
   process.exit(0);
 } else {
   console.log(chalk.red.bold("✖ MCP Schema verification errors encountered\n"));

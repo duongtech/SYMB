@@ -34,27 +34,24 @@ export async function runUnflatten(
     child.on("close", () => {
       const elapsed = Date.now() - startTime;
       let result: UnflattenResult;
+      const limitations: string[] = [];
 
       try {
         result = JSON.parse(output.trim());
       } catch {
         result = {
           dispatcher_address: functionAddress,
-          state_variable: "state_var",
-          recovered_blocks_count: 5,
-          unflattened_pseudocode: `// SYMB Deobfuscator recovered logic for ${functionAddress}\nvoid recovered_${functionAddress.replace("0x", "")}() {\n    if (check_condition()) {\n        proceed_action();\n    }\n}`,
+          state_variable: "unknown",
+          recovered_blocks_count: 0,
+          unflattened_pseudocode: `// [SYMB ERROR] Failed to parse unflatten output for ${functionAddress}\n// Output: ${errorOutput.trim() || output.trim() || "Process failed"}`,
           clean_cfg: {
             nodes: [
-              { id: "bb0", label: "Entry", address: functionAddress },
-              { id: "bb1", label: "Recovered Branch A" },
-              { id: "bb2", label: "Recovered Branch B" }
+              { id: "entry", label: "Entry", address: functionAddress }
             ],
-            edges: [
-              { from: "bb0", to: "bb1", condition: "state == 1" },
-              { from: "bb0", to: "bb2", condition: "state == 2" }
-            ]
+            edges: []
           }
         };
+        limitations.push(`Unflatten execution error: ${errorOutput.trim() || output.trim() || "Failed to produce valid JSON"}`);
       }
 
       resolve({
@@ -64,7 +61,7 @@ export async function runUnflatten(
         normalized_result: result,
         raw_solver_output: output || errorOutput,
         execution_time_ms: elapsed,
-        limitations: []
+        limitations
       });
     });
   });

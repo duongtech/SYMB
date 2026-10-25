@@ -20,7 +20,11 @@ import {
   EntropyScanInputSchema,
   XrefAnalysisInputSchema,
   OptimizeMediaInputSchema,
-  DynamicallyUnpackInputSchema
+  DynamicallyUnpackInputSchema,
+  AntiDebugInputSchema,
+  LicenseBypassInputSchema,
+  FridaHookInputSchema,
+  BinaryPatchInputSchema
 } from "./contracts/schemas.js";
 import { runDynamicUnpacker } from "./core/unpacker.js";
 import { runUnflatten } from "./core/unflatten.js";
@@ -38,12 +42,16 @@ import { runIosDecompile } from "./core/ios.js";
 import { runEntropyScan } from "./core/entropy.js";
 import { runXrefAnalysis } from "./core/xref.js";
 import { runMediaOptimizer } from "./core/media_optimizer.js";
+import { runAntiDebugAnnihilator } from "./core/anti_debug.js";
+import { runLicenseBypass } from "./core/license_bypass.js";
+import { runFridaGenerator } from "./core/frida_generator.js";
+import { runBinaryPatcher } from "./core/patcher.js";
 
 export function createSymbServer(): Server {
   const server = new Server(
     {
       name: "symb",
-      version: "1.0.0"
+      version: "2.0.0"
     },
     {
       capabilities: {
@@ -265,6 +273,86 @@ export function createSymbServer(): Server {
             },
             required: ["pid", "memory_address", "patch_bytes_hex"]
           }
+        },
+        {
+          name: "neutralize_anti_debugging",
+          description:
+            "Active reverse engineering intervention. Scans and neutralizes anti-debugging traps, PEB BeingDebugged checks, INT 2D/3 traps, and RDTSC timing checks. Automatically NOPs out traps on disk binary with PE checksum recalculation.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to binary (PE, ELF)" },
+              auto_patch: { type: "boolean", description: "Automatically NOP out traps and write patched binary" },
+              output_path: { type: "string", description: "Optional output destination path" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "bypass_license_authorization",
+          description:
+            "Active reverse engineering intervention. Detects authorization/license validation branches, computes conditional jump inversions, and applies permanent binary bypass patches on disk.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary" },
+              function_address: { type: "string", description: "Target validation function address or symbol" },
+              force_success: { type: "boolean", description: "Invert conditionals to force valid license" },
+              apply_to_file: { type: "boolean", description: "Write patched binary to disk" },
+              output_path: { type: "string", description: "Optional output path" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "generate_frida_instrumentation",
+          description:
+            "Active reverse engineering intervention. Generates production-grade Frida dynamic instrumentation scripts for SSL unpinning, root/jailbreak cloaking, anti-debug runtime hooks, and dynamic crypto sniffing.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              target: { type: "string", description: "Target process name or package ID" },
+              platform: { type: "string", enum: ["android", "ios", "windows", "linux"], description: "Target platform" },
+              script_type: {
+                type: "string",
+                enum: ["ssl_unpinning", "root_jailbreak_bypass", "anti_debug_runtime_cloak", "crypto_tracer", "api_logger", "custom_interceptor"],
+                description: "Type of dynamic instrumentation"
+              },
+              custom_filter: { type: "string", description: "Optional function or class name filter" }
+            },
+            required: ["target"]
+          }
+        },
+        {
+          name: "patch_binary_executable",
+          description:
+            "Active reverse engineering intervention. Surgical disk binary patcher with RVA-to-Raw conversion, PE/ELF section mapping, arbitrary hex byte modification, automatic backup creation, and PE checksum recalculation.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary (PE, ELF, RAW)" },
+              patches: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    address: { description: "Virtual address, RVA, or physical offset" },
+                    offset: { description: "Physical file offset" },
+                    bytes_hex: { type: "string", description: "Hex bytes to write (e.g. '90 90' or 'EB 15')" },
+                    description: { type: "string", description: "Description of patch" },
+                    is_rva: { type: "boolean", description: "Whether address is an RVA" },
+                    is_va: { type: "boolean", description: "Whether address is a full Virtual Address" }
+                  },
+                  required: ["bytes_hex"]
+                },
+                description: "List of byte patches"
+              },
+              output_path: { type: "string", description: "Optional destination output path" },
+              create_backup: { type: "boolean", description: "Create .bak backup when modifying in-place" },
+              recalculate_pe_checksum: { type: "boolean", description: "Recalculate PE optional header checksum" }
+            },
+            required: ["binary_path", "patches"]
+          }
         }
       ]
     };
@@ -426,6 +514,59 @@ export function createSymbServer(): Server {
           };
         }
 
+        case "neutralize_anti_debugging": {
+          const parsed = AntiDebugInputSchema.parse(args);
+          const result = await runAntiDebugAnnihilator(
+            parsed.binary_path,
+            parsed.auto_patch,
+            parsed.output_path
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case "bypass_license_authorization": {
+          const parsed = LicenseBypassInputSchema.parse(args);
+          const result = await runLicenseBypass(
+            parsed.binary_path,
+            parsed.function_address,
+            parsed.force_success,
+            parsed.apply_to_file,
+            parsed.output_path
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case "generate_frida_instrumentation": {
+          const parsed = FridaHookInputSchema.parse(args);
+          const result = await runFridaGenerator(
+            parsed.target,
+            parsed.platform,
+            parsed.script_type,
+            parsed.custom_filter
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case "patch_binary_executable": {
+          const parsed = BinaryPatchInputSchema.parse(args);
+          const result = await runBinaryPatcher(
+            parsed.binary_path,
+            parsed.patches as any,
+            parsed.output_path,
+            parsed.create_backup,
+            parsed.recalculate_pe_checksum
+          );
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
         default:
           throw new Error(`Unknown SYMB tool: ${name}`);
       }
@@ -444,7 +585,7 @@ export async function runServer(): Promise<void> {
   const server = createSymbServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("SYMB (Symbolic Reversing & Decompiler) MCP Server running on stdio");
+  console.error("SYMB (Symbolic Reversing & Dynamic Binary Intervention) MCP Server running on stdio");
 }
 
 export const runStdioServer = runServer;

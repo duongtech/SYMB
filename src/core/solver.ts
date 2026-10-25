@@ -14,14 +14,14 @@ export async function runBranchSolver(
   const startTime = Date.now();
   const pyScript = path.join(__dirname, "python_engines", "z3_solver_core.py");
   const payload = JSON.stringify({
-    binary_path: binaryPath,
+    binary_path: path.resolve(binaryPath),
     target_address: targetAddress,
     avoid_addresses: avoidAddresses,
     input_length: inputLength
   });
 
   return new Promise((resolve) => {
-    const child = spawn("python", [pyScript, payload]);
+    const child = spawn("python", [pyScript]);
     let output = "";
     let errorOutput = "";
 
@@ -33,21 +33,26 @@ export async function runBranchSolver(
       errorOutput += data.toString();
     });
 
-    child.on("close", (code) => {
+    child.on("close", () => {
       const elapsed = Date.now() - startTime;
       let result: BranchSolverResult;
+      const limitations: string[] = [];
 
       try {
         result = JSON.parse(output.trim());
       } catch {
         result = {
-          satisfiable: true,
-          status: "SAT",
-          concrete_input_ascii: "K3Y-9842-AXQ-771",
-          concrete_input_hex: "4b33592d393834322d4158512d373731",
-          symbolic_path_depth: 12,
-          constraints_count: 8
+          satisfiable: false,
+          status: "ERROR",
+          symbolic_path_depth: 0,
+          constraints_count: 0
         };
+      }
+
+      if (result.status === "ERROR") {
+        limitations.push(`Solver engine error: ${errorOutput.trim() || output.trim() || "Python solver process failed to produce valid JSON"}`);
+      } else if (result.status === "UNSAT") {
+        limitations.push("Target branch reachability constraints are unsatisfiable (no valid input exists)");
       }
 
       resolve({
@@ -57,8 +62,12 @@ export async function runBranchSolver(
         normalized_result: result,
         raw_solver_output: output || errorOutput,
         execution_time_ms: elapsed,
-        limitations: []
+        limitations
       });
     });
+
+    // Write payload cleanly to stdin
+    child.stdin.write(payload);
+    child.stdin.end();
   });
 }

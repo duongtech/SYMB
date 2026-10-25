@@ -13,7 +13,8 @@ const suites = [
   { name: "Z3 SMT Mathematical Logic Engine", script: "scripts/verify-z3-solver.mjs" },
   { name: "OLLVM Control-Flow Unflattening (PE & ELF)", script: "scripts/verify-ollvm-unflatten.mjs" },
   { name: "SMT Branch Reachability Solver", script: "scripts/verify-smt-branch.mjs" },
-  { name: "Large Media & Binary Buffer Optimizer Engine", script: "scripts/verify-media-optimizer.mjs" }
+  { name: "Large Media & Binary Buffer Optimizer Engine", script: "scripts/verify-media-optimizer.mjs" },
+  { name: "Active Binary Intervention & Weaponized RE Engine", script: "scripts/verify-binary-intervention.mjs" }
 ];
 
 let failedCount = 0;

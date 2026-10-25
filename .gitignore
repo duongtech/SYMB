@@ -70,3 +70,10 @@ examples/*.jpg
 examples/test_*
 
 *.unpacked.bin
+
+# Test output & temp intervention binaries
+scratch_test_intervention/
+*.bak
+*.patched.*
+*.licensed_bypassed.*
+*.antidebug_patched.*

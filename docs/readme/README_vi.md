@@ -6,10 +6,10 @@
 
 [English](../../README.md) · **Tiếng Việt**
 
-### Một MCP Server duy nhất cho Thực thi Biểu trưng (Symbolic Execution), Gỡ rối OLLVM (Unflattening) và Giải ràng buộc SMT cho mọi tác vụ Dịch ngược và Tác nhân AI.
+### Một MCP Server duy nhất cho Thực thi Biểu trưng (Symbolic Execution), Gỡ rối OLLVM (Unflattening) và Can thiệp Dịch ngược Chủ động (Active Binary Intervention) cho mọi AI Agent.
 
 [![npm version](https://img.shields.io/npm/v/symb-agents?style=flat-square&color=cb3837)](https://www.npmjs.com/package/symb-agents)
-[![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](../mcp-contracts.md)
+[![MCP tool catalog](https://img.shields.io/badge/MCP-20%20Tools%20Active-5c4ee5?style=flat-square)](../mcp-contracts.md)
 [![Python requirements](https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&logo=python&logoColor=white)](#yêu-cầu-hệ-thống)
 [![Node.js requirements](https://img.shields.io/badge/Node.js-requirements-339933?style=flat-square&logo=nodedotjs&logoColor=white)](#yêu-cầu-hệ-thống)
 [![MIT license](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](../../LICENSE)
@@ -34,151 +34,75 @@ npx symb-agents setup
 
 ## ⚡ SYMB Là Gì?
 
-**SYMB** là một Model Context Protocol (MCP) Server tự động hóa, trao quyền cho các AI Agent hàng đầu hiện nay (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, **Copilot**, **Codex**) năng lực **Thực thi Biểu trưng (Symbolic Execution), Giải bài toán Ràng buộc SMT và Tự động Giải mã Làm rối Luồng điều khiển (CFG Deobfuscation)**.
+**SYMB** là một Model Context Protocol (MCP) Server tự động hóa, trao quyền cho các AI Agent hàng đầu hiện nay (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, **Copilot**, **Codex**) năng lực **Thực thi Biểu trưng (Symbolic Execution), Giải bài toán Ràng buộc SMT và Tự động Can thiệp Dịch ngược (Active Binary Intervention)**.
 
-Trong khi các công cụ dịch ngược thụ động truyền thống chỉ trích xuất cú pháp hoặc mã giả tĩnh, **SYMB biến AI Agent thành một cỗ máy giải toán tự trị thực thụ**:
+Trong khi các công cụ dịch ngược truyền thống (như `morluto/rea`) chỉ quan sát tĩnh và từ chối can thiệp nhị phân, **SYMB biến AI Agent thành một cỗ máy bẻ khóa và can thiệp tự trị thực thụ**:
 
 - **Tự động Gỡ phẳng Luồng điều khiển (OLLVM Unflattening):** Quét biến trạng thái (state variable), triệt tiêu các vòng lặp điều phối (switch dispatcher) của OLLVM/Hikari/Goron, khử vị từ mờ (opaque predicates) và khôi phục đồ thị luồng điều khiển (CFG) nguyên bản.
-- **Tự động Giải nhánh SMT (Automated Branch Solving):** Sử dụng **angr** và **Z3 Theorem Prover** để tính toán chính xác chuỗi byte đầu vào thỏa mãn các nhánh thành công (như `SUCCESS`, `VALID_LICENSE`, `UNLOCKED`) mà không cần fuzzing ngẫu nhiên.
-- **Theo vết Biểu trưng Nhiễm bẩn (Symbolic Taint Tracing):** Chứng minh toán học luồng dữ liệu không tin cậy có thể xâm nhập vào các điểm nguy hiểm (`memcpy`, format string, indirect call).
-- **Phẫu thuật Bộ nhớ Tiến trình Zero-Disk:** Tiêm hook và trampoline trực tiếp vào RAM của tiến trình đang chạy mà không làm thay đổi tệp nhị phân trên đĩa cứng, vượt qua các lớp bảo vệ kiểm tra mã băm (hash check/integrity).
+- **Tự động Giải nhánh SMT (Automated Branch Solving):** Sử dụng **angr** và **Z3 Theorem Prover** để tính toán chính xác chuỗi byte đầu vào thỏa mãn các nhánh thành công (`VALID_LICENSE`, `UNLOCKED`) mà không cần fuzzing ngẫu nhiên.
+- **Can thiệp Nhị phân & Phẫu thuật File Thực thi trên Đĩa:** Chuyển đổi chính xác RVA sang Raw File Offset, đảo nhánh nhảy có điều kiện (`JZ` $\leftrightarrow$ `JNZ`), ghi trực tiếp opcode đã vá và tự động cập nhật lại `PE OptionalHeader.CheckSum`.
+- **Triệt hạ Bẫy Chống Debug & Kiểm tra PEB:** Tự động phát hiện và NOP out (`0x90`) các bẫy `RDTSC`, `RDTSCP`, `INT 2D`, `INT 3`, và truy cập cờ `BeingDebugged` trong PEB.
+- **Tổng hợp Frida Dynamic Instrumentation:** Tự động sinh mã kịch bản Frida vượt kiểm tra chứng chỉ số (Universal SSL Unpinning), ẩn danh Root/Magisk và hook API Windows native (`IsDebuggerPresent`).
+- **Phẫu thuật Bộ nhớ Tiến trình Zero-Disk:** Tiêm hook và trampoline trực tiếp vào RAM của tiến trình đang chạy mà không làm thay đổi tệp nhị phân trên đĩa cứng.
 
 ---
 
-## 🌊 Cách Thức Hoạt Động Của SYMB
+## ⚔️ So Sánh SYMB vs REA (Passive vs Active)
 
-<p align="center">
-  <img src="../assets/symb-solver-flow.svg" alt="SYMB Investigation Flow" width="100%">
-</p>
-
-1. **Khởi tạo từ AI Agent**: Agent của bạn tiếp nhận yêu cầu phân tích binary hoặc giải bài toán và gọi SYMB qua giao thức chuẩn MCP JSON-RPC (stdio).
-2. **Xây dựng Cây Cú pháp Biểu trưng (AST)**: SYMB dịch các tập lệnh máy hoặc khối basic block bị làm rối sang biểu diễn trung gian (VEX/LLVM IR) và xây dựng biểu thức logic.
-3. **Giải Ràng buộc SMT**: Lõi Z3 và angr duyệt biểu trưng các đường dẫn thực thi, tích lũy điều kiện rẽ nhánh $\Phi$ và giải phương trình tìm nghiệm SAT.
-4. **Trả lời Dưới dạng Bằng chứng Chuẩn hóa (Canonical SymbEvidence)**: Phản hồi về Agent dưới dạng JSON chi tiết chứa bằng chứng toán học, đồ thị liên kết basic block và chuỗi payload thực tế.
+| Tính năng | Trợ lý thụ động (như `morluto/rea`) | SYMB (Active Intervention Engine) |
+| :--- | :---: | :---: |
+| **Triết lý** | Chỉ đọc, mô tả và quan sát thụ động | **Can thiệp thực chiến & Tự động bẻ khóa** |
+| **Sửa đổi nhị phân trên đĩa** | ❌ Từ chối tích hợp | ✔ **Phẫu thuật file trực tiếp với RVA-to-Raw mapping** |
+| **Tự động tính lại PE CheckSum** | ❌ Không hỗ trợ | ✔ **Tự động cập nhật `OptionalHeader.CheckSum`** |
+| **Xử lý Anti-Debug / Timing** | ⚠️ Chỉ liệt kê cảnh báo | ✔ **Tự động NOP out RDTSC, INT 2D, PEB BeingDebugged** |
+| **Bypass Bản quyền / License** | ⚠️ Chỉ nhận diện logic | ✔ **Tự động đảo nhánh điều kiện & xuất file đã crack** |
+| **Sinh Frida Hook Scripts** | ⚠️ Giới hạn | ✔ **Tự động sinh kịch bản SSL Unpinning, Root Cloak** |
+| **Live RAM Hot Patch** | ❌ Không hỗ trợ | ✔ **Zero-Disk memory trampolines qua Win32 API / Linux mem** |
+| **Hệ thống Kiểm thử** | ✔ Đa dạng | ✔ **4 Vitest Suites + 8 Comprehensive Suites (Pass 100%)** |
 
 ---
 
-## 🎯 Ma Trận Mục Tiêu & Năng Lực Giải Quyết
+## 🛠️ Danh Mục 20 Công Cụ MCP Native
 
-SYMB yêu cầu Node.js 18+ và Python 3.10+ cùng các thư viện giải toán `z3-solver` và `angr`:
-
-| Mục tiêu & Thách thức | Những gì SYMB Phân tích & Trả về | Yêu cầu & Tài liệu hướng dẫn |
+### ⚔️ Vũ Khí Can Thiệp Nhị Phân Chủ Động (Active Intervention)
+| Tên công cụ | Tham số chính | Chức năng cốt lõi |
 | :--- | :--- | :--- |
-| **Làm rối Luồng điều khiển (OLLVM / CFF)** | Triệt tiêu vòng lặp switch dispatcher, loại bỏ các bước nhảy rác, khôi phục CFG tuyến tính và mã giả C sạch | Tích hợp sẵn angr / Z3 AST solver; [Hướng dẫn OLLVM](../ollvm-unflattening.md) |
-| **Giải Rẽ nhánh Phức tạp (SMT Branch Reachability)** | Chuỗi byte chính xác (ASCII, Hex) kích hoạt nhánh thành công và né tránh các nhánh báo lỗi | Z3 SMT Solver & angr; [Hướng dẫn SMT](../smt-branch-solving.md) |
-| **Máy ảo Tùy biến (Custom Bytecode VMs)** | Trích xuất con trỏ lệnh ảo (VPC), bảng phân phối opcode và dịch ngược mã byte ảo về LLVM IR / C | Tích hợp bộ giải biểu trưng; [Ma trận mục tiêu](../target-matrix.md) |
-| **Bộ nhớ Tiến trình Thời gian thực** | Tiêm hook và trampoline động trong RAM mà không chỉnh sửa file nhị phân trên đĩa (Zero-disk) | Quyền thực thi phù hợp (Admin/root); [Hướng dẫn Trampoline](../zero-disk-trampolines.md) |
-| **Phân tích Taint Biểu trưng** | Dò vết truyền dữ liệu từ bộ đệm đầu vào tới các hàm đích nguy hiểm (`memcpy`, format string) | Tích hợp công cụ Taint; [Đặc tả Hợp đồng MCP](../mcp-contracts.md) |
-| **Nghịch đảo Trạng thái Băm Mật mã** | Nghịch đảo các phép toán dịch bit phi tuyến, vòng lặp tính checksum tùy chỉnh để tìm seed ban đầu | Z3 bit-vector solver; [Hướng dẫn SMT](../smt-branch-solving.md) |
-| **Luồng Điều khiển Rác (Bogus Control Flow)** | Chứng minh tính bất biến của vị từ mờ ($y^2 \ge 0$), xóa bỏ các khối lệnh chết và vòng lặp vô nghĩa | Tích hợp SMT simplifier; [Hướng dẫn OLLVM](../ollvm-unflattening.md) |
-| **SDK Bảo mật Mobile** | Khôi phục luồng kiểm tra root và kiểm tra tính toàn vẹn bị làm rối trong file `.so` Android ARM64 | ARM64 backend với angr / Z3; [Hướng dẫn OLLVM](../ollvm-unflattening.md) |
-| **Mã nhị phân WebAssembly (WASM)** | Gỡ phẳng các bảng switch WASM phức tạp và chuẩn hóa cấu trúc `block`/`loop` | Trình phân tích WASM tích hợp; [Ma trận mục tiêu](../target-matrix.md) |
+| `neutralize_anti_debugging` | `binary_path`, `auto_patch`, `output_path` | Quét và triệt tiêu bẫy debug inline (RDTSC, INT 2D/3, PEB), tự động NOP out và ghi ra file đã vá với PE checksum chuẩn. |
+| `bypass_license_authorization` | `binary_path`, `force_success`, `apply_to_file` | Đánh giá các nhánh kiểm tra bản quyền, tính toán đảo ngược mã nhảy (`JE` $\leftrightarrow$ `JNE`), và xuất file đã bẻ khóa. |
+| `patch_binary_executable` | `binary_path`, `patches`, `output_path` | Phẫu thuật byte nhị phân trên đĩa cứng. Chuyển đổi RVA sang raw offset, tính toán bảng chênh lệch và cập nhật PE CheckSum. |
+| `generate_frida_instrumentation` | `target`, `platform`, `script_type` | Tự động sinh script Frida chuyên dụng cho SSL unpinning, ẩn giấu RootBeer/Magisk và hook API Anti-Debug. |
+| `hot_patch_live_memory` | `pid`, `memory_address`, `patch_bytes_hex` | Tiêm trampoline và hook động trực tiếp vào RAM tiến trình mà không ghi đĩa. |
 
----
-
-## 🌟 Tình Huống Thực Tế Điển Hình (Showcases)
-
-### Tình huống 1: Gỡ rối SDK Bảo mật Mobile bảo vệ bằng OLLVM
-Một thư viện native Android `libsecurity.so` giấu hàm kiểm tra thiết bị root sau một máy trạng thái 48 nhánh rẽ:
-- **Công cụ SYMB**: `unflatten_control_flow`
-- **Kết quả**: Phát hiện biến trạng thái nằm trong thanh ghi `w19`, loại bỏ 38 cạnh dispatch rác và khôi phục 4 khối lệnh xác thực ban đầu chỉ trong 1.2 giây.
-
-### Tình huống 2: Giải Ràng buộc SMT 128-bit cho Thuật toán Bản quyền
-Một hàm DRM thực hiện 16 vòng xoay bit và số học modulo trước khi so sánh với mã băm mục tiêu:
-- **Công cụ SYMB**: `solve_branch_reachability`
-- **Kết quả**: Thiết lập biểu thức bit-vector 128-bit trên Z3; tìm ra mã bản quyền hợp lệ (`SYMB-7F89-A2C4-9981`) trong 38.4 mili-giây mà không cần brute-force.
-
-### Tình huống 3: Tiêm Trampoline Bộ nhớ Không Ghi Đĩa (Zero-Disk) trong Live Daemon
-Một dịch vụ nền Linux tự kiểm tra mã băm SHA256 của file nhị phân trên đĩa trước khi xử lý token bảo mật:
-- **Công cụ SYMB**: `hot_patch_live_memory`
-- **Kết quả**: Cấp phát bộ đệm trampoline thực thi trong RAM, chuyển hướng luồng kiểm tra và trích xuất token giải mã mà không thay đổi bất kỳ byte nào trên file nhị phân gốc.
+### 🔬 Lõi Thực Thi Biểu Trưng & Dịch Ngược Chuyên Sâu
+| Tên công cụ | Tham số chính | Chức năng cốt lõi |
+| :--- | :--- | :--- |
+| `dynamically_unpack_binary` | `binary_path`, `max_instructions` | Giải nén mã độc và packer bằng giả lập CPU Unicorn, bắt OEP tail jump và dump bộ nhớ sạch. |
+| `unflatten_control_flow` | `binary_path`, `function_address` | Gỡ rối OLLVM switch dispatcher, khôi phục đồ thị CFG tuyến tính nguyên bản. |
+| `solve_branch_reachability` | `binary_path`, `target_address` | Dùng Z3 SMT Solver & angr giải chính xác payload kích hoạt nhánh thành công. |
+| `trace_symbolic_taint` | `binary_path`, `source_symbol`, `sink_symbol` | Kiểm tra luồng dữ liệu biểu trưng từ input tới các hàm sink nguy hiểm (`memcpy`, format string). |
+| `decompile_native_function` | `binary_path`, `function_address` | Dịch ngược mã máy sang C pseudocode trong < 400ms bằng Capstone với tái cấu trúc vòng lặp. |
+| `decompile_entire_program` | `binary_path`, `max_functions` | Dịch ngược toàn bộ chương trình và tái tạo project mã nguồn C hoàn chỉnh. |
+| `decompile_apk_package` | `target_path`, `max_classes` | Bộ dịch ngược Android APK 5-pass: kiểm tra chữ ký v1/v2/v3, quét CWE, trích xuất JNI và dịch Dalvik sang Java. |
+| `decompile_ios_ipa_package` | `target_path` | Dịch ngược gói Apple iOS IPA & Mach-O ARM64, kiểm tra FairPlay DRM (cryptid) và Anti-Jailbreak. |
+| `decrypt_obfuscated_strings` | `binary_path`, `max_candidates` | Tự động hóa giải mã chuỗi mã hóa XOR (Single-byte, Rolling-key) và Base64. |
+| `detect_binary_protections` | `binary_path` | Nhận diện packer (UPX, Themida, VMProtect), API Anti-Debug, Anti-VM và bẫy chu kỳ xung nhịp RDTSC. |
+| `inspect_binary_layout` | `binary_path` | Quét cấu trúc PE/ELF, các cơ chế ASLR/DEP/SafeSEH, bảng import IAT và entropy từng section. |
+| `detect_crypto_primitives` | `binary_path` | Tầm soát S-Box AES, hằng số SHA/MD5, bảng CRC32, ChaCha cho bài toán nghịch đảo SMT. |
+| `scan_byte_entropy` | `binary_path`, `block_size` | Bản đồ nhiệt Shannon entropy 256-byte nhận diện shellcode mã hóa và dữ liệu nén. |
+| `trace_binary_xrefs` | `binary_path` | Lập đồ thị gọi hàm toàn cục và dò vết chuỗi tham chiếu chéo (XREFs). |
+| `optimize_large_media_buffer` | `file_path`, `target_max_mb` | Nén video, tách âm thanh và stream dump nhị phân hàng GB qua zero-RAM mmap. |
 
 ---
 
 ## 🚀 Cài Đặt & Khởi Động Nhanh
 
-### 1. Trình Thuật Sĩ Tự Động Thiết Lập
-Chạy lệnh sau trên terminal để tự động cấu hình các AI Agent của bạn:
-
 ```bash
+# Cấu hình tự động cho AI Coding Agents
 npx symb-agents setup
+
+# Kiểm tra năng lực toàn hệ thống
+npm test
 ```
-
-### 2. Cấu Hình Thủ Công Theo Từng Agent
-
-#### Claude Code (`~/.claude/config.json`)
-```json
-{
-  "mcpServers": {
-    "symb": {
-      "command": "npx",
-      "args": ["-y", "symb-agents", "serve"]
-    }
-  }
-}
-```
-
-#### Cursor (`~/.cursor/mcp.json` hoặc `.cursor/mcp.json`)
-```json
-{
-  "mcpServers": {
-    "symb": {
-      "command": "node",
-      "args": ["/đường/dẫn/đến/symb/dist/index.js"]
-    }
-  }
-}
-```
-
-#### Antigravity / Gemini CLI (`antigravity.json`)
-```json
-{
-  "mcpServers": {
-    "symb": {
-      "command": "symb",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
----
-
-## 🛠️ Danh Mục Công Cụ MCP
-
-SYMB cung cấp bộ 7 công cụ dịch ngược và giải bài toán biểu trưng cốt lõi qua giao thức chuẩn MCP:
-
-| Tên công cụ | Tham số chính | Chức năng cốt lõi |
-| :--- | :--- | :--- |
-| `decompile_native_function` | `binary_path`, `function_address`, `max_instructions` | Dịch ngược mã máy sang C Pseudocode siêu tốc bằng Capstone (.rdata XREFs) |
-| `inspect_binary_layout` | `binary_path` | Quét cấu trúc PE/ELF, các cơ chế ASLR/DEP, bảng import IAT, và entropy section |
-| `detect_crypto_primitives` | `binary_path` | Tầm soát S-Box AES, hằng số SHA/MD5, bảng CRC32, ChaCha cho bài toán nghịch đảo |
-| `unflatten_control_flow` | `binary_path`, `function_address`, `arch` | Gỡ rối OLLVM switch dispatcher, khôi phục CFG sạch |
-| `solve_branch_reachability` | `target_address`, `avoid_addresses`, `symbolic_vars` | Dùng Z3 giải chính xác dữ liệu đầu vào kích hoạt nhánh đích |
-| `trace_symbolic_taint` | `source_address`, `sink_address`, `taint_var` | Kiểm tra luồng dữ liệu từ input không tin cậy tới memory sink |
-| `hot_patch_live_memory` | `target_pid`, `hook_address`, `patch_bytes_hex` | Tiêm trampoline và hook động trực tiếp vào RAM tiến trình |
-
----
-
-## 📦 Yêu Cầu Hệ Thống
-
-- **Node.js**: `>= 18.0.0` (Tương thích Node 20, 22, 24)
-- **Python**: `>= 3.10`
-- **Bộ Giải Toán Native**: `pip install angr z3-solver triton` (Thuật sĩ `npx symb-agents setup` có thể tự động cài đặt).
-
----
-
-## 📖 Tài Liệu Tham Khảo
-
-- [Ma Trận Phân Tích & Giải Quyết Mục Tiêu](../target-matrix.md)
-- [Hướng Dẫn Gỡ Rối OLLVM](../ollvm-unflattening.md)
-- [Hướng Dẫn Giải Ràng Buộc Nhánh SMT](../smt-branch-solving.md)
-- [Hướng Dẫn Tiêm Trampoline Bộ Nhớ Zero-Disk](../zero-disk-trampolines.md)
-- [Đặc Tả Hợp Đồng Công Cụ MCP](../mcp-contracts.md)
-- [Hướng Dẫn Tích Hợp Cho Agent](../installation.md)
-- [Chỉ Dẫn Cho AI Agent](../../AGENTS.md)
-- [Chính Sách Đóng Góp](../../CONTRIBUTING.md)
-- [Chính Sách Bảo Mật](../../SECURITY.md)
 
 ---
 

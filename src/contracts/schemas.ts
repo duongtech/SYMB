@@ -81,3 +81,47 @@ export const DynamicallyUnpackInputSchema = z.object({
   binary_path: z.string().describe("Absolute path to packed binary (PE, ELF)"),
   max_instructions: z.number().default(50000).describe("Maximum CPU emulation instruction limit")
 });
+
+export const AntiDebugInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to binary (PE, ELF) to scan for anti-debugging traps"),
+  auto_patch: z.boolean().default(false).describe("Automatically NOP-out detected anti-debug instructions and write .patched binary"),
+  output_path: z.string().optional().describe("Optional output path for patched binary")
+});
+
+export const LicenseBypassInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary"),
+  function_address: z.string().optional().describe("Target validation function address (e.g. 0x401200), or auto-detect"),
+  force_success: z.boolean().default(true).describe("Invert conditional branches to force validation success"),
+  apply_to_file: z.boolean().default(false).describe("Write patched binary with license bypass applied"),
+  output_path: z.string().optional().describe("Optional output path for patched binary")
+});
+
+export const FridaHookInputSchema = z.object({
+  target: z.string().describe("Target process name, package name, or binary path (e.g. com.example.app, target.exe)"),
+  platform: z.enum(["android", "ios", "windows", "linux"]).default("android").describe("Target platform architecture"),
+  script_type: z.enum(["ssl_unpinning", "root_jailbreak_bypass", "anti_debug_runtime_cloak", "crypto_tracer", "api_logger", "custom_interceptor"]).default("ssl_unpinning").describe("Hooking technique to generate"),
+  custom_filter: z.string().optional().describe("Optional function or class name filter")
+});
+
+export const BinaryPatchInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to binary (PE, ELF, Mach-O, RAW)"),
+  patches: z.array(
+    z.object({
+      address: z.union([z.string(), z.number()]).optional().describe("Virtual address, RVA, or physical offset"),
+      offset: z.union([z.string(), z.number()]).optional().describe("Physical file offset"),
+      bytes_hex: z.string().describe("Hex bytes string to write (e.g. '90 90' or 'EB 12')"),
+      description: z.string().optional().describe("Description of this patch"),
+      is_rva: z.boolean().optional().describe("Whether address is an RVA"),
+      is_va: z.boolean().optional().describe("Whether address is a full Virtual Address")
+    })
+  ).describe("Array of byte patches to apply"),
+  output_path: z.string().optional().describe("Optional output path for patched binary"),
+  create_backup: z.boolean().default(true).describe("Create .bak file before modifying in-place"),
+  recalculate_pe_checksum: z.boolean().default(true).describe("Recalculate PE optional header checksum")
+});
+
+export const GhidraDecompileInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to binary (PE, ELF, Mach-O) for deep Ghidra deconstruction"),
+  function_address: z.string().optional().describe("Target function hex address to decompile (or entire entrypoint)"),
+  timeout_seconds: z.number().default(120).describe("Decompilation timeout in seconds")
+});

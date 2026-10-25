@@ -56,7 +56,9 @@
     "verify:branch": "node scripts/verify-smt-branch.mjs",
     "verify:media": "node scripts/verify-media-optimizer.mjs",
     "verify:contracts": "node scripts/verify-mcp-contracts.mjs",
-    "test": "node scripts/verify-all.mjs",
+    "verify:intervention": "node scripts/verify-binary-intervention.mjs",
+    "test:unit": "vitest run",
+    "test": "vitest run && node scripts/verify-all.mjs",
     "lint": "oxlint src"
   },
   "dependencies": {

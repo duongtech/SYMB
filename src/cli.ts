@@ -79,6 +79,29 @@ program
       registeredCount++;
     } catch {}
 
+    // Antigravity / Gemini MCP Registration
+    const antigravityMcpDir = path.join(
+      os.homedir(),
+      ".gemini",
+      "antigravity",
+      "mcp",
+      "symb"
+    );
+    try {
+      if (!fs.existsSync(antigravityMcpDir)) {
+        fs.mkdirSync(antigravityMcpDir, { recursive: true });
+      }
+      const symbManifest = {
+        name: "symb",
+        command: "npx",
+        args: ["-y", "symb-agents"],
+        description: "Symbolic Reverse Engineering MCP Server"
+      };
+      fs.writeFileSync(path.join(antigravityMcpDir, "manifest.json"), JSON.stringify(symbManifest, null, 2), "utf-8");
+      console.log(chalk.green("✔ Registered SYMB with Antigravity"));
+      registeredCount++;
+    } catch {}
+
     console.log(chalk.bold.green(`\n🎉 SYMB successfully registered with ${registeredCount} agent environment(s)!`));
     console.log(chalk.dim("Restart your AI agent or reload window to start using SYMB tools.\n"));
   });
