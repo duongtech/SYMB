@@ -16,12 +16,18 @@ import {
   DecompileIosInputSchema,
   EntropyScanInputSchema,
   XrefAnalysisInputSchema,
-  OptimizeMediaInputSchema
+  OptimizeMediaInputSchema,
+  DynamicallyUnpackInputSchema
 } from "../dist/contracts/schemas.js";
 
 console.log(chalk.cyan.bold("\n📜 SYMB MCP TOOL SCHEMAS & CANONICAL EVIDENCE CONTRACTS VERIFICATION\n"));
 
 const schemas = [
+  {
+    name: "dynamically_unpack_binary Schema",
+    schema: DynamicallyUnpackInputSchema,
+    sampleValid: { binary_path: "target.exe", max_instructions: 50000 }
+  },
   {
     name: "optimize_large_media_buffer Schema",
     schema: OptimizeMediaInputSchema,
@@ -115,7 +121,7 @@ for (const s of schemas) {
 
 console.log("\n" + "─".repeat(50));
 if (allPassed) {
-  console.log(chalk.green.bold("★ ALL 15 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
+  console.log(chalk.green.bold("★ ALL 16 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
   process.exit(0);
 } else {
   console.log(chalk.red.bold("✖ MCP Schema verification errors encountered\n"));

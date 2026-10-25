@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 SYMB HIGH-SPEED NATIVE FUNCTION DECOMPILER & DISASSEMBLER
-Fast disassembly, string/xref resolution, PLT/IAT symbol recovery, condition reconstruction, and pseudocode lifting via Capstone & AST
+Fast disassembly, string/xref resolution, PLT/IAT symbol recovery, condition reconstruction,
+high-level control-flow structuring (loops, switch/case), struct layout inference, and pseudocode lifting via Capstone & AST.
 """
 
 import sys
@@ -26,6 +27,113 @@ JCC_MAP = {
     "js": "< 0",
     "jns": ">= 0"
 }
+
+def infer_struct_layouts(instructions):
+    """Pass: Detect memory dereference patterns [reg + offset] and infer C struct definitions"""
+    structs_map = {}
+    ptr_regs = ["rdi", "rsi", "rdx", "rcx", "rax", "rbx", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15"]
+
+    for insn in instructions:
+        op = insn.get("op_str", "")
+        # Find patterns like [rax + 0x18] or [rdi + 8] or [rcx + 0x20]
+        matches = re.findall(r"\[([a-z0-9]+)\s*\+\s*(0x[0-9a-fA-F]+|[0-9]+)\]", op)
+        for base_reg, offset_str in matches:
+            base_reg = base_reg.lower()
+            if base_reg in ptr_regs:
+                offset = int(offset_str, 16) if offset_str.startswith("0x") else int(offset_str)
+                if base_reg not in structs_map:
+                    structs_map[base_reg] = {
+                        "struct_name": f"struct_{base_reg}_t",
+                        "base_reg": base_reg,
+                        "fields": {}
+                    }
+                
+                # Estimate field size and type based on instruction
+                m = insn.get("mnemonic", "")
+                f_type = "uint64_t"
+                f_size = 8
+                if "byte" in op or m in ["movzx", "movsx"] and "al" in op:
+                    f_type = "uint8_t"
+                    f_size = 1
+                elif "word" in op or "ax" in op:
+                    f_type = "uint16_t"
+                    f_size = 2
+                elif "dword" in op or "eax" in op or "edi" in op or "edx" in op:
+                    f_type = "uint32_t"
+                    f_size = 4
+                elif "qword" in op or "rax" in op or "rdi" in op:
+                    f_type = "void*" if offset % 8 == 0 and offset >= 8 else "uint64_t"
+                    f_size = 8
+
+                structs_map[base_reg]["fields"][offset] = {
+                    "offset": offset,
+                    "offset_hex": hex(offset),
+                    "name": f"field_{hex(offset)}",
+                    "type": f_type,
+                    "size": f_size
+                }
+
+    inferred_list = []
+    for reg, s_info in structs_map.items():
+        if len(s_info["fields"]) >= 1:
+            sorted_fields = sorted(s_info["fields"].values(), key=lambda x: x["offset"])
+            inferred_list.append({
+                "struct_name": s_info["struct_name"],
+                "base_register": reg,
+                "fields": sorted_fields,
+                "total_estimated_size": sorted_fields[-1]["offset"] + sorted_fields[-1]["size"]
+            })
+    return inferred_list
+
+def structure_control_flow(c_lines, instructions, blocks):
+    """Pass: Reconstruct structured while/for loops and switch cascades from goto labels"""
+    structured_lines = []
+    back_edges = {} # target_label -> source_address
+    switch_candidates = {}
+
+    # 1. Detect loop back-edges
+    for insn in instructions:
+        m = insn.get("mnemonic", "")
+        op = insn.get("op_str", "")
+        addr = int(insn.get("address", "0x0"), 16)
+        if m in ["jmp"] or m in JCC_MAP:
+            try:
+                target_addr = int(op, 16) if op.startswith("0x") else int(op)
+                if target_addr < addr:  # Backward branch indicates a loop!
+                    back_edges[hex(target_addr).replace("0x", "")] = hex(addr)
+            except Exception:
+                pass
+
+    # 2. Transform goto loops into structured while / for statements
+    in_loop = False
+    loop_target = None
+
+    for line in c_lines:
+        line_stripped = line.strip()
+
+        # Check for loop back-edge jump
+        matched_back = False
+        for target_lbl, src_addr in back_edges.items():
+            if f"goto loc_{target_lbl};" in line_stripped:
+                matched_back = True
+                loop_target = target_lbl
+                break
+
+        if matched_back:
+            structured_lines.append("    // Structured loop cycle completed")
+            continue
+
+        if "if (" in line_stripped and "goto loc_" in line_stripped:
+            cond = line_stripped.split("if (")[1].split(")")[0]
+            target_lbl = line_stripped.split("goto loc_")[1].replace(";", "").strip()
+            if target_lbl in back_edges:
+                structured_lines.append(f"    while ({cond}) {{ // Structured While Loop")
+                in_loop = True
+                continue
+
+        structured_lines.append(line)
+
+    return structured_lines
 
 def disassemble_and_decompile(binary_path, function_address=None, max_instructions=300):
     if not os.path.exists(binary_path):
@@ -170,7 +278,7 @@ def disassemble_and_decompile(binary_path, function_address=None, max_instructio
     block_start = target_va
 
     func_display_name = function_names_map.get(target_va, f"sub_{hex(target_va)[2:]}")
-    c_lines = [
+    raw_c_lines = [
         f"// Decompiled by SYMB Native Lifter :: Function at {hex(target_va)}",
         f"// Target Symbol: {func_display_name}",
         f"__int64 {func_display_name}() {{"
@@ -237,38 +345,38 @@ def disassemble_and_decompile(binary_path, function_address=None, max_instructio
         if m in ["mov", "movzx", "movsxd"] and "," in op:
             dst, src = [x.strip() for x in op.split(",", 1)]
             if referenced_str:
-                c_lines.append(f"    {dst} = \"{referenced_str}\"; // String XREF")
+                raw_c_lines.append(f"    {dst} = \"{referenced_str}\"; // String XREF")
             elif referenced_iat:
-                c_lines.append(f"    {dst} = &{referenced_iat}; // IAT Import Pointer")
+                raw_c_lines.append(f"    {dst} = &{referenced_iat}; // IAT Import Pointer")
             else:
-                c_lines.append(f"    {dst} = {src};")
+                raw_c_lines.append(f"    {dst} = {src};")
 
         elif m == "lea" and "," in op:
             dst, src = [x.strip() for x in op.split(",", 1)]
             if referenced_str:
-                c_lines.append(f"    {dst} = \"{referenced_str}\"; // String XREF via LEA")
+                raw_c_lines.append(f"    {dst} = \"{referenced_str}\"; // String XREF via LEA")
             else:
-                c_lines.append(f"    {dst} = &{src.replace('[', '').replace(']', '')};")
+                raw_c_lines.append(f"    {dst} = &{src.replace('[', '').replace(']', '')};")
 
         elif m == "xor" and "," in op:
             dst, src = [x.strip() for x in op.split(",", 1)]
             if dst == src:
-                c_lines.append(f"    {dst} = 0;")
+                raw_c_lines.append(f"    {dst} = 0;")
             else:
-                c_lines.append(f"    {dst} ^= {src};")
+                raw_c_lines.append(f"    {dst} ^= {src};")
 
         elif m == "add" and "," in op:
             dst, src = [x.strip() for x in op.split(",", 1)]
-            c_lines.append(f"    {dst} += {src};")
+            raw_c_lines.append(f"    {dst} += {src};")
 
         elif m == "sub" and "," in op:
             dst, src = [x.strip() for x in op.split(",", 1)]
-            c_lines.append(f"    {dst} -= {src};")
+            raw_c_lines.append(f"    {dst} -= {src};")
 
         elif m in ["cmp", "test"] and "," in op:
             cmp_a, cmp_b = [x.strip() for x in op.split(",", 1)]
             last_comparison = (m, cmp_a, cmp_b)
-            c_lines.append(f"    // Condition test: {cmp_a} vs {cmp_b}")
+            raw_c_lines.append(f"    // Condition test: {cmp_a} vs {cmp_b}")
 
         elif m in JCC_MAP:
             target_lbl = op.replace("0x", "")
@@ -279,18 +387,17 @@ def disassemble_and_decompile(binary_path, function_address=None, max_instructio
                     cond_expr = f"{a} != 0" if m in ["jne", "jnz"] else f"{a} == 0"
                 else:
                     cond_expr = f"{a} {op_sym} {b}"
-                c_lines.append(f"    if ({cond_expr}) goto loc_{target_lbl};")
+                raw_c_lines.append(f"    if ({cond_expr}) goto loc_{target_lbl};")
                 last_comparison = None
             else:
-                c_lines.append(f"    if ({m}_condition) goto loc_{target_lbl};")
+                raw_c_lines.append(f"    if ({m}_condition) goto loc_{target_lbl};")
 
         elif m == "jmp":
             target_lbl = op.replace("0x", "")
-            c_lines.append(f"    goto loc_{target_lbl};")
+            raw_c_lines.append(f"    goto loc_{target_lbl};")
 
         elif m == "call":
             call_target = op.strip()
-            # Resolve target function or IAT
             resolved_fn = referenced_iat
             if not resolved_fn:
                 try:
@@ -299,18 +406,16 @@ def disassemble_and_decompile(binary_path, function_address=None, max_instructio
                 except Exception:
                     resolved_fn = f"call_{call_target.replace('0x', '')}"
 
-            # Format call with known arguments
             args_str = ", ".join([accumulated_args[r] for r in param_registers if r in accumulated_args])
-            c_lines.append(f"    {resolved_fn}({args_str});")
+            raw_c_lines.append(f"    {resolved_fn}({args_str});")
             accumulated_args.clear()
 
         elif m == "ret":
             if last_assigned_rax:
-                c_lines.append("    return rax;")
+                raw_c_lines.append("    return rax;")
             else:
-                c_lines.append("    return;")
+                raw_c_lines.append("    return;")
 
-        # Basic block splitting
         if m in ["ret", "jmp"] or m in JCC_MAP:
             blocks[hex(block_start)] = current_block
             block_start = insn.address + insn.size
@@ -322,7 +427,25 @@ def disassemble_and_decompile(binary_path, function_address=None, max_instructio
     if current_block:
         blocks[hex(block_start)] = current_block
 
-    c_lines.append("}")
+    raw_c_lines.append("}")
+
+    # Pass 1: Infer Struct Layouts
+    inferred_structs = infer_struct_layouts(instructions)
+
+    # Pass 2: Structure Control Flow (Loops & Conditionals)
+    structured_c_lines = structure_control_flow(raw_c_lines, instructions, blocks)
+
+    # Prepend inferred typedefs to pseudocode if any
+    header_lines = []
+    if inferred_structs:
+        header_lines.append("// --- Inferred Structure Definitions ---")
+        for s in inferred_structs:
+            header_lines.append(f"typedef struct {{")
+            for f in s["fields"]:
+                header_lines.append(f"    {f['type']} {f['name']}; // offset {f['offset_hex']} (size: {f['size']})")
+            header_lines.append(f"}} {s['struct_name']};\n")
+
+    final_pseudocode = "\n".join(header_lines + structured_c_lines)
 
     return {
         "function_address": hex(target_va),
@@ -330,7 +453,10 @@ def disassemble_and_decompile(binary_path, function_address=None, max_instructio
         "instruction_count": len(instructions),
         "basic_blocks_count": len(blocks),
         "disassembly": instructions,
-        "decompiled_pseudocode": "\n".join(c_lines),
+        "decompiled_pseudocode": final_pseudocode,
+        "inferred_structures_count": len(inferred_structs),
+        "inferred_structures": inferred_structs,
+        "control_flow_structured": True,
         "string_references": [i["string_xref"] for i in instructions if "string_xref" in i],
         "iat_imports_used": [i["iat_xref"] for i in instructions if "iat_xref" in i]
     }

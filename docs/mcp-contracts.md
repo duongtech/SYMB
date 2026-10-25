@@ -177,3 +177,165 @@ Tầm soát và định vị các cấu trúc mật mã trong binary: S-Box AES 
   "required": ["binary_path"]
 }
 ```
+
+
+---
+
+## Tool 8: `detect_binary_protections`
+
+Quét và phát hiện các lớp bảo vệ nhị phân (Anti-Debugging, Anti-VM, Timing Traps, Packers).
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to target binary" }
+  },
+  "required": ["binary_path"]
+}
+```
+
+---
+
+## Tool 9: `decompile_apk_package`
+
+Phân rã gói Android APK và Dalvik DEX bytecode. Giải mã bảng tài nguyên `resources.arsc`, trích xuất Manifest quyền hạn, kiểm tra chứng chỉ X.509 và dịch ngược bytecode sang Java class.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "target_path": { "type": "string", "description": "Absolute path to APK or DEX file" },
+    "max_classes": { "type": "number", "default": 15, "description": "Maximum classes to decompile" }
+  },
+  "required": ["target_path"]
+}
+```
+
+---
+
+## Tool 10: `decrypt_obfuscated_strings`
+
+Giải mã chuỗi ẩn giấu (Single-byte XOR, Cycling XOR, Rolling Key XOR, Base64) trên các file thực thi PE, ELF, APK, và .so.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to binary" },
+    "max_candidates": { "type": "number", "default": 20, "description": "Maximum candidate strings to return" }
+  },
+  "required": ["binary_path"]
+}
+```
+
+---
+
+## Tool 11: `decompile_ios_ipa_package`
+
+Phân rã gói Apple iOS IPA và ARM64 Mach-O. Kiểm tra FairPlay DRM (`cryptid`), phát hiện Anti-Jailbreak và tái tạo cấu trúc Objective-C / Swift.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "target_path": { "type": "string", "description": "Absolute path to iOS IPA or Mach-O" }
+  },
+  "required": ["target_path"]
+}
+```
+
+---
+
+## Tool 12: `scan_byte_entropy`
+
+Tính toán biểu đồ nhiệt độ hỗn loạn Shannon entropy trên các khối 256/512 byte để phát hiện shellcode mã hóa và payload ẩn giấu.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to binary file" },
+    "block_size": { "type": "number", "default": 512, "description": "Block size for entropy calculation" }
+  },
+  "required": ["binary_path"]
+}
+```
+
+---
+
+## Tool 13: `trace_binary_xrefs`
+
+Xây dựng đồ thị gọi hàm (Call Graph) toàn chương trình và giải mã liên kết chéo (XREFs) giữa địa chỉ lệnh thực thi và hằng số chuỗi.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to binary" },
+    "limit": { "type": "number", "default": 100, "description": "Max call edges to return" }
+  },
+  "required": ["binary_path"]
+}
+```
+
+---
+
+## Tool 14: `optimize_large_media_buffer`
+
+Tối ưu hóa bộ nhớ đệm đa phương tiện và file nhị phân dung lượng lớn cho AI Agents. Bóc tách luồng âm thanh `.m4a`, nén video về ngưỡng bộ nhớ và stream memory dump nhiều GB bằng `mmap` không tốn RAM.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "file_path": { "type": "string", "description": "Path to media file (.mp4, .mov) or memory dump (.bin, .dmp)" },
+    "target_max_mb": { "type": "number", "default": 50, "description": "Target memory budget in MB" }
+  },
+  "required": ["file_path"]
+}
+```
+
+---
+
+## Tool 15: `dynamically_unpack_binary`
+
+Giải mã động packer nhị phân (UPX, Themida, crypters) bằng CPU emulator Unicorn. Theo dõi vết thực thi, phát hiện cú nhảy đuôi (tail jump) thoát khỏi stub và dump bộ nhớ OEP đã giải mã.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "binary_path": { "type": "string", "description": "Absolute path to packed binary (PE, ELF)" },
+    "max_instructions": { "type": "number", "default": 50000, "description": "Maximum CPU emulation steps" }
+  },
+  "required": ["binary_path"]
+}
+```
+
+---
+
+## Tool 16: `hot_patch_live_memory`
+
+Tiêm trampoline bộ nhớ nguyên tử vào tiến trình đang chạy mà không cần sửa đổi tệp thực thi trên đĩa.
+
+### Input Schema
+```json
+{
+  "type": "object",
+  "properties": {
+    "pid": { "type": "number", "description": "Target process ID" },
+    "memory_address": { "type": "string", "description": "Hex address to hook" },
+    "patch_bytes_hex": { "type": "string", "description": "Hex patch bytes" }
+  },
+  "required": ["pid", "memory_address", "patch_bytes_hex"]
+}
+```

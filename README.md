@@ -11,7 +11,7 @@
 [![CI Audit](https://github.com/duongtech/SYMB/actions/workflows/ci.yml/badge.svg)](https://github.com/duongtech/SYMB/actions/workflows/ci.yml)
 [![GitHub Release](https://img.shields.io/github/v/release/duongtech/SYMB?style=flat-square&color=2ea44f)](https://github.com/duongtech/SYMB/releases)
 [![npm version](https://img.shields.io/npm/v/symb-agents?style=flat-square&color=cb3837)](https://www.npmjs.com/package/symb-agents)
-[![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](docs/mcp-contracts.md)
+[![MCP tool catalog](https://img.shields.io/badge/MCP-16%20Tools%20Active-5c4ee5?style=flat-square)](docs/mcp-contracts.md)
 [![Python requirements](https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&logo=python&logoColor=white)](#requirements)
 [![Node.js requirements](https://img.shields.io/badge/Node.js-requirements-339933?style=flat-square&logo=nodedotjs&logoColor=white)](#requirements)
 [![MIT license](https://img.shields.io/badge/license-MIT-f4c430?style=flat-square)](LICENSE)
@@ -34,280 +34,96 @@ npx symb-agents setup
 
 ---
 
-<p align="center">
-  <img src="docs/assets/symb-terminal-demo.svg" alt="SYMB Interactive Session" width="100%">
-</p>
-
----
-
 ## ⚡ What is SYMB?
 
-**SYMB** is an autonomous Model Context Protocol (MCP) server that empowers AI Agents (**Claude Code**, **Cursor**, **Antigravity**, **Gemini CLI**, **Copilot**, **Codex**) with **Symbolic Execution, SMT Constraint Solving, 5-Pass Mobile APK/IPA Decompilation, and Control-Flow Deobfuscation**.
-
-While conventional disassemblers and decompilers only perform passive syntax inspection or shell out to heavy external Java runtimes, **SYMB elevates AI agents with high-speed in-memory symbolic solvers**:
-
-- **5-Pass High-Speed Android APK & DEX Decompiler:** Pure native in-memory Dalvik lifter with X.509 signature verification (v1, v2, v3 schemes), hardcoded secret hunting, and native JNI security audits. Decompiles 33MB+ multi-DEX packages in under 3.5s with zero external Java dependencies.
-- **Apple iOS IPA & ARM64 Mach-O Decompiler:** Unpacks iOS IPA archives, detects FairPlay DRM encryption (`cryptid` in `LC_ENCRYPTION_INFO_64`), flags anti-jailbreak hooks (`/Applications/Cydia.app`, `ptrace(PT_DENY_ATTACH)`), and reconstructs Objective-C/Swift interfaces.
-- **Automated Obfuscated String Decryption:** Solves single-byte XOR, multi-byte cycling XOR, and additive rolling-key XOR `[i ^ (k + i)]` across raw binary sections.
-- **Symbolic Control-Flow Unflattening:** Eliminates OLLVM / Obfuscator-LLVM flattening, unrolls opaque predicates, and reconstructs clean, human-readable control flow graphs.
-- **Automated SMT Branch Solving:** Mathematically solves for exact byte-level inputs that drive execution to target success branches using **angr** and the **Z3 Theorem Prover**.
-- **Dynamic Symbolic Taint Tracking:** Proves whether attacker-controlled input data can propagate into dangerous memory sinks (`memcpy`, format strings, indirect calls).
-- **Zero-Disk In-Memory Surgery:** Injects live function hooks and dynamic trampolines directly into running processes without modifying executable files on disk.
+**SYMB** is an autonomous reverse engineering, constraint solving, and deobfuscation engine purpose-built for AI agents. It wraps low-level symbolic execution engines (**Z3 SMT Solver**, **angr**, **Unicorn CPU Emulator**, **Capstone**) into clean Model Context Protocol (MCP) tool contracts.
 
 ---
 
-## 🌊 How SYMB Works
+## 🛠️ MCP Tool Reference (16 Native Tools)
 
-<p align="center">
-  <img src="docs/assets/symb-solver-flow.svg" alt="SYMB Investigation Flow" width="100%">
-</p>
-
-1. **Agent Invocation**: Your AI agent receives a reverse engineering or debugging prompt and queries SYMB via standard MCP JSON-RPC.
-2. **Symbolic AST Generation**: SYMB translates binary instructions or obfuscated basic blocks into intermediate representations (VEX/LLVM IR) and builds symbolic expression trees.
-3. **SMT Constraint Solving**: The Z3 engine and angr symbolically traverse execution paths, accumulating path conditions $\Phi$ and solving for satisfiability.
-4. **Canonical Evidence Delivery**: Results are returned to the agent in structured `SymbEvidence` JSON containing mathematical proofs, recovered assembly edges, and verified concrete payloads.
-
----
-
-## 🎯 What You Can Solve & Analyze
-
-SYMB requires Node.js 18+ and Python 3.10+ with `z3-solver` and `angr`:
-
-| Target & Challenge | What SYMB Solves & Returns | Requirements & Guide |
-| :--- | :--- | :--- |
-| **Android APK & Multi-DEX Packages** | 5-pass native decompilation: Dalvik to Java AST, X.509 signature schemes (v1/v2/v3), hardcoded secret hunting, and JNI .so audits | Built-in native lifter; zero Java dependencies |
-| **Apple iOS IPA & ARM64 Mach-O** | In-memory IPA analysis, FairPlay DRM detection (`cryptid`), anti-jailbreak hooks audit, Objective-C/Swift header recovery | Built-in Mach-O & Plist engine |
-| **Obfuscated Strings Recovery** | Solves Single-Byte XOR, Multi-Byte cycling XOR, and Additive Rolling-Key XOR across binary sections | Built-in crypto deobfuscator |
-| **Control-Flow Flattening (CFF)** | Eliminates switch dispatchers, removes bogus jumps, restores original linear CFG and clean C pseudocode | Built-in angr / Z3 engine; [OLLVM Guide](docs/ollvm-unflattening.md) |
-| **Complex Branch Reachability** | Computes the exact byte sequence (ASCII, Hex) that reaches success blocks while avoiding failure paths | Z3 SMT Solver & angr; [SMT Solver Guide](docs/smt-branch-solving.md) |
-| **Custom Bytecode VMs** | Recovers Virtual Program Counter (VPC), handler opcode jump tables, and lifts VM instructions to standard IR | Built-in symbolic tracer; [Target Matrix](docs/target-matrix.md) |
-| **Live Process Memory** | Injects zero-disk function hooks and executable trampolines directly in RAM without modifying disk files | Caller permissions (Admin/root); [Trampolines Guide](docs/zero-disk-trampolines.md) |
-| **Symbolic Taint Analysis** | Bit-level dataflow propagation from input buffers to critical memory sinks (`memcpy`, format strings) | Built-in taint tracer; [MCP Contracts](docs/mcp-contracts.md) |
-| **Cryptographic Hash Pre-states** | Inverts nonlinear bit-shift operations, checksums, and custom hashing loops to recover valid seeds | Z3 bit-vector solver; [SMT Solver Guide](docs/smt-branch-solving.md) |
-| **Bogus Control Flow (BCF)** | Proves invariant truth values for opaque predicates ($y^2 \ge 0$), eliminating dead loops and dummy blocks | Built-in SMT simplifier; [OLLVM Guide](docs/ollvm-unflattening.md) |
-| **Mobile Security SDKs** | Unflattens ARM64 root-detection and integrity-checking routines in Android `.so` and iOS Mach-O binaries | ARM64 backend with angr / Z3; [OLLVM Guide](docs/ollvm-unflattening.md) |
-| **WebAssembly Binaries** | Unflattens switch-heavy WASM dispatchers and normalizes structured `block`/`loop` control flow | Built-in WASM parser; [Target Matrix](docs/target-matrix.md) |
-
----
-
-## 🌟 Showcases
-
-### Showcase 1: De-obfuscating an OLLVM-Protected Mobile Security SDK
-An Android native library `libsecurity.so` protected root-detection logic behind a 48-branch state machine switch dispatcher:
-- **SYMB Tool**: `unflatten_control_flow`
-- **Result**: Identified state variable in register `w19`, eliminated 38 bogus dispatcher edges, and restored the original 4-block linear authentication flow in 1.2 seconds.
-
-### Showcase 2: SMT Solving a 128-Bit Nonlinear License Algorithm
-A proprietary DRM validation routine performed 16 rounds of bit-rotations and modular arithmetic before checking against a target hash:
-- **SYMB Tool**: `solve_branch_reachability`
-- **Result**: Formulated 128-bit bit-vector constraints in Z3; discovered the exact valid serial key (`SYMB-7F89-A2C4-9981`) in 38.4 milliseconds without brute-force fuzzing.
-
-### Showcase 3: Zero-Disk In-Memory Trampoline in a Live Daemon
-A running Linux background service verified its own binary on disk via SHA256 before processing cryptographic payloads:
-- **SYMB Tool**: `hot_patch_live_memory`
-- **Result**: Allocated an executable trampoline in process memory, redirected the validation check in RAM, and extracted decrypted tokens without altering a single byte on disk.
-
----
-
-## 🚀 Quickstart & Setup
-
-### 1. Interactive Setup Wizard
-Run the universal installer to automatically configure your AI agent environments:
-
-```bash
-npx symb-agents setup
-```
-
-### 2. Manual Agent Configuration
-
-#### Claude Code (`~/.claude/config.json`)
-```json
-{
-  "mcpServers": {
-    "symb": {
-      "command": "npx",
-      "args": ["-y", "symb-agents", "serve"]
-    }
-  }
-}
-```
-
-#### Cursor (`~/.cursor/mcp.json` or `.cursor/mcp.json`)
-```json
-{
-  "mcpServers": {
-    "symb": {
-      "command": "node",
-      "args": ["/path/to/symb/dist/index.js"]
-    }
-  }
-}
-```
-
-#### Antigravity / Gemini CLI (`antigravity.json`)
-```json
-{
-  "mcpServers": {
-    "symb": {
-      "command": "symb",
-      "args": ["serve"]
-    }
-  }
-}
-```
-
----
-
-## 🛠️ MCP Tool Reference
-
-SYMB implements 15 high-speed native reversing tools via standard MCP JSON-RPC:
+SYMB implements 16 high-speed native reversing tools via standard MCP JSON-RPC:
 
 | Tool Name | Key Arguments | Primary Capability |
 | :--- | :--- | :--- |
+| `dynamically_unpack_binary` | `binary_path`, `max_instructions` | Unicorn CPU emulation unpacker. Executes binary past packer stubs (UPX, Themida, crypters), detects OEP tail jumps, and dumps unpacked memory images |
 | `optimize_large_media_buffer` | `file_path`, `target_max_mb` | High-capacity media & raw binary buffer processor for AI Agents. Extracts isolated audio (.m4a/.mp3), downsamples oversized videos (<= 50MB), extracts keyframes with typography safe zones, and streams multi-GB dumps via zero-RAM mmap |
 | `scan_byte_entropy` | `binary_path`, `block_size` | 256-byte sliding window Shannon entropy heatmap generator. Detects encrypted shellcode, cryptor payloads, and compressed overlays with visual ANSI distribution |
 | `trace_binary_xrefs` | `binary_path`, `limit` | Maps whole-program call graph edges, indirect calls, and resolves cross-references (XREFs) between code addresses and string literals |
 | `decompile_ios_ipa_package` | `target_path` | Decompiles Apple iOS IPA packages & ARM64 Mach-O binaries. Audits FairPlay DRM (cryptid), Anti-Jailbreak hooks, and reconstructs Objective-C / Swift interfaces |
-| `decompile_apk_package` | `target_path`, `max_classes` | Decompiles Android APK and DEX files in milliseconds. Extracts manifest permissions, audits native .so libraries, and lifts Dalvik bytecode to Java classes |
+| `decompile_apk_package` | `target_path`, `max_classes` | Decompiles Android APK and DEX files in milliseconds. Resolves resources.arsc symbol tables, extracts manifest permissions, audits native .so libraries, and lifts Dalvik bytecode to Java classes |
 | `decrypt_obfuscated_strings` | `binary_path`, `max_candidates` | Automated string deobfuscation engine. Solves Single-byte XOR, Multi-byte cycling XOR, Rolling Key XOR, and Base64 across PE, ELF, APK, and .so binaries |
-| `decompile_native_function` | `binary_path`, `function_address`, `max_instructions` | Decompiles machine code to clean C pseudocode in < 400ms with Capstone, resolving string XREFs, condition branching, and IAT/PLT stubs |
+| `decompile_native_function` | `binary_path`, `function_address` | Decompiles machine code to clean C pseudocode in < 400ms with Capstone, performing control-flow structuring (loops, switch/case) and C struct layout inference |
 | `decompile_entire_program` | `binary_path`, `max_functions` | Automated whole-program decompiler. Recovers function entry points and generates unified, compilable C source files with forward declarations |
 | `detect_binary_protections` | `binary_path` | Detects packers (UPX, Themida, VMProtect, Enigma), Anti-Debug APIs, Anti-VM artifacts, and ASM timing traps with risk scores |
 | `inspect_binary_layout` | `binary_path` | Scans PE/ELF headers, ASLR/DEP/SafeSEH mitigations, IAT/EAT exports, and measures Shannon entropy per section |
 | `detect_crypto_primitives` | `binary_path` | Scans for AES S-Boxes, SHA/MD5 constants, CRC32 tables, RC4 loops, and ChaCha schedules for SMT inversion |
-| `unflatten_control_flow` | `binary_path`, `function_address`, `timeout_seconds` | Symbolically deobfuscates OLLVM switch dispatchers and restores original CFG |
-| `solve_branch_reachability` | `binary_path`, `target_address`, `avoid_addresses` | Uses Z3 SMT Solver & angr to solve for exact inputs reaching target branches |
+| `unflatten_control_flow` | `binary_path`, `function_address` | Symbolically deobfuscates OLLVM switch dispatchers and restores original CFG |
+| `solve_branch_reachability` | `binary_path`, `target_address` | Uses Z3 SMT Solver & angr to solve for exact inputs reaching target branches |
 | `trace_symbolic_taint` | `binary_path`, `source_symbol`, `sink_symbol` | Bit-level dataflow propagation analysis from input buffers to critical memory sinks |
 | `hot_patch_live_memory` | `pid`, `memory_address`, `patch_bytes_hex` | Injects zero-disk trampolines into running process RAM without disk modification |
 
 ---
 
----
-
-## 🎬 High-Capacity Media & Raw Buffer Optimizer for AI Agents
-
-AI Agents frequently crash with **"temporary processing memory exhausted"** or context window overflow when users upload large screen recordings, podcasts, instructional videos (e.g. `.mp4`, `.mov`), or multi-gigabyte memory dumps.
-
-SYMB integrates a dedicated hardware-accelerated media and zero-RAM memory-mapped buffer engine:
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                      SYMB LARGE MEDIA & BUFFER OPTIMIZATION PIPELINE                   │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                        │
-│   Oversized Input File (100MB - 5GB)                                                   │
-│   [ Video: .mp4 / .mov / .mkv ] ────► [ FFmpeg Hardware Extraction ]                   │
-│                                           │                                            │
-│                                           ├──► Isolated Audio Track (.m4a/.mp3)        │
-│                                           │    (95% context reduction for STT/whisper) │
-│                                           │                                            │
-│                                           ├──► Smart Video Downsampler (<= 50MB)       │
-│                                           │    (Fits standard agent memory budget)     │
-│                                           │                                            │
-│                                           └──► Keyframe Storyboard & Safe-Zone Spec    │
-│                                                (Avoids top header text covering faces) │
-│                                                                                        │
-│   [ Raw Binary / Memory Dump (.bin/.dmp) ] ──► Zero-RAM mmap Chunked Streaming         │
-│                                                (Streams gigabyte files with 0MB heap)  │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### CLI Quick Start
-```bash
-# Optimize large video and extract isolated audio + keyframe storyboard
-symb optimize-media ./path/to/large_video.mp4 --target-mb 50
-
-# Map and stream multi-gigabyte raw memory dump without loading into RAM
-symb optimize-media ./dumps/system_crash.dmp --target-mb 20
-```
-
-### Response Example
-```json
-{
-  "status": "SUCCESS",
-  "file_type": "VIDEO_MEDIA",
-  "original_size_mb": 184.2,
-  "target_max_mb": 50,
-  "is_downsampled": true,
-  "optimized_size_mb": 42.1,
-  "isolated_audio_track": {
-    "path": "/path/to/extracted_audio.m4a",
-    "size_mb": 3.8,
-    "note": "Use this audio track for speech recognition to save 95% of agent context memory."
-  },
-  "extracted_keyframes_count": 5,
-  "agent_guidance": "Video optimized successfully within target budget."
-}
-```
-
 ## 💻 Standalone Command-Line Interface (CLI)
 
-SYMB provides a rich standalone CLI tool for rapid terminal investigations:
-
 ```bash
-# Decompile any function to C pseudocode in milliseconds (< 400ms)
+# Dynamically unpack UPX or encrypted binary via Unicorn CPU emulation
+symb unpack ./examples/01_ollvm_cff/CFF_win64.exe
+
+# Decompile native function with control-flow structuring & struct inference
 symb decompile ./examples/02_smt_crackme/ais3_crackme 0x4005f6
 
 # Translate an entire binary to a unified C project file
 symb decompile-all ./examples/02_smt_crackme/ais3_crackme --limit 10
 
-# Decompile Apple iOS IPA package / ARM64 Mach-O, check FairPlay DRM and Anti-Jailbreak
-symb ipa ./examples/05_ios_sample/sample_protected.ipa
-
-# Decompile Android APK package, audit permissions, and reconstruct Java
+# Decompile Android APK with resources.arsc symbol resolution
 symb apk ./examples/04_apk_sample/sample_protected.apk
 
-# Decrypt obfuscated strings (Single-byte XOR, Rolling XOR, Base64)
+# Decompile Apple iOS IPA, audit FairPlay DRM and Anti-Jailbreak
+symb ipa ./examples/05_ios_sample/sample_protected.ipa
+
+# Decrypt obfuscated strings (Rolling XOR, Base64)
 symb decrypt-strings ./examples/01_ollvm_cff/CFF_win64.exe
 
-# Scan protections, packers (UPX, VMProtect), Anti-Debugging & Anti-VM
+# Scan protections, packers, Anti-Debugging & Anti-VM
 symb protections ./examples/01_ollvm_cff/CFF_win64.exe
 
-# Deep binary inspection (PE/ELF headers, ASLR/DEP, Shannon entropy)
-symb inspect ./examples/01_ollvm_cff/CFF_win64.exe
-
-# Detect cryptographic primitives and tables
-symb crypto ./examples/01_ollvm_cff/CFF_win64.exe
-
-# Symbolically unflatten OLLVM state dispatcher
-symb unflatten ./examples/01_ollvm_cff/CFF_win64.exe 0x401500
-
-# Scan rolling Shannon entropy heatmap and detect packed/cryptor payloads
+# Scan rolling Shannon entropy heatmap
 symb entropy ./examples/01_ollvm_cff/CFF_win64.exe
 
-# Trace whole-program call graph edges, indirect calls, and string XREFs
+# Trace whole-program call graph edges and string XREFs
 symb xrefs ./examples/01_ollvm_cff/CFF_win64.exe
 
-# Optimize oversized media/video (> 50MB) or memory dumps to fit agent memory budget
+# Optimize oversized media/video (> 50MB) or memory dumps
 symb optimize-media ./examples/sample_video.mp4 --target-mb 50
 ```
 
-Detailed JSON schemas and response contracts are documented in [docs/mcp-contracts.md](docs/mcp-contracts.md).
+---
+
+## 📚 Deep-Dive Architecture & Documentation Hub
+
+To keep documentation clean, focused, and maintainable, in-depth architectural guides and specifications are organized in modular documents:
+
+- ⚡ **[Advanced Decompiler Architectures](docs/decompiler-advanced.md)**: Android `resources.arsc` symbol decoupling, high-level control-flow structuring (`while`, `for`, `switch/case`), C struct layout inference, and Unicorn CPU dynamic memory unpacking.
+- 🎬 **[Large Media & Binary Buffer Optimizer](docs/media-optimizer.md)**: Hardware-accelerated audio extraction, video downsampling budgets, safe-zone keyframe planning, and zero-RAM `mmap` streaming for multi-gigabyte memory dumps.
+- 🌪️ **[OLLVM Control-Flow Unflattening Guide](docs/ollvm-unflattening.md)**: Symbolic execution and basic block recovery across Windows PE and Linux ELF binaries.
+- 🎯 **[SMT Branch Constraint Solving Guide](docs/smt-branch-solving.md)**: Automated reachability solving with Z3 SMT and angr.
+- 📜 **[Canonical MCP Tool Contracts & Schemas](docs/mcp-contracts.md)**: Comprehensive JSON schemas and input/output contracts for all 16 MCP tools.
+- 🔒 **[Zero-Disk Memory Trampolines Guide](docs/zero-disk-trampolines.md)**: Atomic live process memory patching without disk footprint.
+- 🤖 **[AI Agent Operating Instructions](AGENTS.md)**: Guidelines for integrating SYMB with autonomous coding agents.
 
 ---
 
-## 📦 Requirements
+## 📦 Requirements & Environment
 
 - **Node.js**: `>= 18.0.0` (Verified on Node 20, 22, and 24)
 - **Python**: `>= 3.10`
-- **Native Solvers**: `pip install angr z3-solver triton` (The `npx symb-agents setup` wizard can configure these automatically).
-
----
-
-## 📖 Documentation Index
-
-- [Target Analysis & Solving Matrix](docs/target-matrix.md)
-- [OLLVM Deobfuscation Guide](docs/ollvm-unflattening.md)
-- [SMT Branch Constraint Solving Guide](docs/smt-branch-solving.md)
-- [Zero-Disk Memory Trampolines Guide](docs/zero-disk-trampolines.md)
-- [MCP Tool Contracts & Evidence Schema](docs/mcp-contracts.md)
-- [Agent Integration Guide](docs/installation.md)
-- [Instructions for AI Agents](AGENTS.md)
-- [Contributing Guidelines](CONTRIBUTING.md)
-- [Security Policy](SECURITY.md)
+- **Native Solvers**: `pip install -r requirements.txt` (Z3 SMT Solver, angr, Unicorn, Capstone).
+- Run `symb audit` or `npx symb-agents setup` to automatically audit your local runtime capabilities.
 
 ---
 
 ## 📄 License
 
-MIT License © 2026 [duongtech](https://github.com/duongtech).
+MIT License. Open-source for developers, security researchers, and autonomous AI agents.

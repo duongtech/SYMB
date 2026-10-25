@@ -76,3 +76,8 @@ export const OptimizeMediaInputSchema = z.object({
   file_path: z.string().describe("Absolute path to media (.mp4, .mov, etc.) or large binary dump"),
   target_max_mb: z.number().default(50).describe("Target maximum MB budget for agent memory context")
 });
+
+export const DynamicallyUnpackInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to packed binary (PE, ELF)"),
+  max_instructions: z.number().default(50000).describe("Maximum CPU emulation instruction limit")
+});

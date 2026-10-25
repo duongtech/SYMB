@@ -19,8 +19,10 @@ import {
   DecompileIosInputSchema,
   EntropyScanInputSchema,
   XrefAnalysisInputSchema,
-  OptimizeMediaInputSchema
+  OptimizeMediaInputSchema,
+  DynamicallyUnpackInputSchema
 } from "./contracts/schemas.js";
+import { runDynamicUnpacker } from "./core/unpacker.js";
 import { runUnflatten } from "./core/unflatten.js";
 import { runBranchSolver } from "./core/solver.js";
 import { runTaintAnalysis } from "./core/taint.js";
@@ -54,6 +56,19 @@ export function createSymbServer(): Server {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
+        {
+          name: "dynamically_unpack_binary",
+          description:
+            "Unicorn CPU emulation unpacker. Executes binary past packer stubs (UPX, Themida, crypters), detects OEP tail jumps, and dumps unpacked memory images.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to packed binary (PE, ELF)" },
+              max_instructions: { type: "number", description: "Maximum CPU emulation steps (default: 50000)" }
+            },
+            required: ["binary_path"]
+          }
+        },
         {
           name: "optimize_large_media_buffer",
           description:
@@ -261,6 +276,14 @@ export function createSymbServer(): Server {
 
     try {
       switch (name) {
+        case "dynamically_unpack_binary": {
+          const parsed = DynamicallyUnpackInputSchema.parse(args);
+          const result = await runDynamicUnpacker(parsed.binary_path, undefined, parsed.max_instructions);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
         case "optimize_large_media_buffer": {
           const parsed = OptimizeMediaInputSchema.parse(args);
           const result = await runMediaOptimizer(parsed.file_path, parsed.target_max_mb);

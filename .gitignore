@@ -68,3 +68,5 @@ examples/04_apk_sample/*.apk
 examples/symb_optimized_media/
 examples/*.jpg
 examples/test_*
+
+*.unpacked.bin

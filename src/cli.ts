@@ -15,6 +15,7 @@ import { runIosDecompile } from "./core/ios.js";
 import { runEntropyScan } from "./core/entropy.js";
 import { runXrefAnalysis } from "./core/xref.js";
 import { runMediaOptimizer } from "./core/media_optimizer.js";
+import { runDynamicUnpacker } from "./core/unpacker.js";
 
 const program = new Command();
 
@@ -331,6 +332,26 @@ program
         console.log(chalk.green(`✔ Size: ${res.file_size_mb} MB | Total mmap Chunks: ${res.total_chunks}`));
         console.log(chalk.cyan(`Streamed Chunks Preview:`), res.streamed_chunks_preview);
       }
+      console.log(chalk.dim(`\n${res.agent_guidance}`));
+    } catch (e: any) {
+      console.error(chalk.red(`Error: ${e.message}`));
+    }
+  });
+
+program
+  .command("unpack <binary>")
+  .description("Dynamically unpack packed binaries (UPX, Themida, crypters) via Unicorn CPU emulation")
+  .option("-i, --max-instructions <num>", "Max emulation steps", "50000")
+  .option("-o, --output <path>", "Output path for unpacked memory image")
+  .action(async (binary, options) => {
+    console.log(chalk.cyan(`\n🔓 Dynamically unpacking binary with Unicorn CPU emulator: ${binary}...`));
+    try {
+      const res = await runDynamicUnpacker(binary, options.output, parseInt(options.maxInstructions, 10));
+      console.log(chalk.green(`✔ Status: ${res.status} | Packer: ${res.packer_detected}`));
+      console.log(chalk.green(`✔ Original OEP: ${res.original_entry_point} -> Recovered OEP: ${res.recovered_oep}`));
+      console.log(chalk.green(`✔ Emulated Instructions: ${res.emulated_instructions} | Tail Jump: ${res.tail_jump_detected}`));
+      console.log(chalk.yellow(`Entropy: ${res.original_entropy} -> ${res.unpacked_entropy}`));
+      console.log(chalk.magenta(`Unpacked Artifact: ${res.unpacked_output_file} (${res.unpacked_payload_size_bytes} bytes)`));
       console.log(chalk.dim(`\n${res.agent_guidance}`));
     } catch (e: any) {
       console.error(chalk.red(`Error: ${e.message}`));
