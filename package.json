@@ -34,6 +34,15 @@
     "url": "https://github.com/duongtech/SYMB/issues"
   },
   "homepage": "https://github.com/duongtech/SYMB#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc && node -e \"const fs = require('fs'); fs.cpSync('src/core/python_engines', 'dist/core/python_engines', {recursive: true});\"",
     "start": "node dist/index.js",

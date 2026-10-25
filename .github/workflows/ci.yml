@@ -1,0 +1,57 @@
+name: SYMB Comprehensive CI Audit
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  audit-and-verify:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+        python-version: ['3.12']
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install System Dependencies & Python Solvers
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ffmpeg libxml2-utils
+          python -m pip install --upgrade pip
+          pip install z3-solver angr unicorn capstone
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Compile TypeScript & Engine Bundles
+        run: npm run build
+
+      - name: Audit System Solvers & Capabilities
+        run: npm run audit
+
+      - name: Verify MCP Tool Contracts & Zod Schemas
+        run: npm run verify:contracts
+
+      - name: Execute Full 6-Stage SYMB Verification Suite
+        run: npm test

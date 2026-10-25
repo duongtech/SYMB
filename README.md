@@ -8,6 +8,8 @@
 
 ### One MCP server for symbolic execution, OLLVM unflattening, and constraint solving across binaries and runtimes.
 
+[![CI Audit](https://github.com/duongtech/SYMB/actions/workflows/ci.yml/badge.svg)](https://github.com/duongtech/SYMB/actions/workflows/ci.yml)
+[![GitHub Release](https://img.shields.io/github/v/release/duongtech/SYMB?style=flat-square&color=2ea44f)](https://github.com/duongtech/SYMB/releases)
 [![npm version](https://img.shields.io/npm/v/symb-agents?style=flat-square&color=cb3837)](https://www.npmjs.com/package/symb-agents)
 [![MCP tool catalog](https://img.shields.io/badge/MCP-tool_catalog-5c4ee5?style=flat-square)](docs/mcp-contracts.md)
 [![Python requirements](https://img.shields.io/badge/Python-3.10%2B-3776ab?style=flat-square&logo=python&logoColor=white)](#requirements)
