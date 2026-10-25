@@ -13,12 +13,30 @@ import {
   ProtectionsScanInputSchema,
   DecompileApkInputSchema,
   DecryptStringsInputSchema,
-  DecompileIosInputSchema
+  DecompileIosInputSchema,
+  EntropyScanInputSchema,
+  XrefAnalysisInputSchema,
+  OptimizeMediaInputSchema
 } from "../dist/contracts/schemas.js";
 
 console.log(chalk.cyan.bold("\n📜 SYMB MCP TOOL SCHEMAS & CANONICAL EVIDENCE CONTRACTS VERIFICATION\n"));
 
 const schemas = [
+  {
+    name: "optimize_large_media_buffer Schema",
+    schema: OptimizeMediaInputSchema,
+    sampleValid: { file_path: "video.mp4", target_max_mb: 50 }
+  },
+  {
+    name: "scan_byte_entropy Schema",
+    schema: EntropyScanInputSchema,
+    sampleValid: { binary_path: "target.exe", block_size: 512 }
+  },
+  {
+    name: "trace_binary_xrefs Schema",
+    schema: XrefAnalysisInputSchema,
+    sampleValid: { binary_path: "target.exe" }
+  },
   {
     name: "decompile_ios_ipa_package Schema",
     schema: DecompileIosInputSchema,
@@ -97,7 +115,7 @@ for (const s of schemas) {
 
 console.log("\n" + "─".repeat(50));
 if (allPassed) {
-  console.log(chalk.green.bold("★ ALL 12 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
+  console.log(chalk.green.bold("★ ALL 15 MCP TOOL CONTRACT SCHEMAS VERIFIED 100% SPEC-COMPLIANT!\n"));
   process.exit(0);
 } else {
   console.log(chalk.red.bold("✖ MCP Schema verification errors encountered\n"));

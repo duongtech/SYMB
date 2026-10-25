@@ -14,6 +14,7 @@ import { runStringDecrypt } from "./core/strings_decrypt.js";
 import { runIosDecompile } from "./core/ios.js";
 import { runEntropyScan } from "./core/entropy.js";
 import { runXrefAnalysis } from "./core/xref.js";
+import { runMediaOptimizer } from "./core/media_optimizer.js";
 
 const program = new Command();
 
@@ -297,6 +298,40 @@ program
           console.log(`  [${s.instruction_address}] -> "${s.string_literal}" (at ${s.string_address})`);
         });
       }
+    } catch (e: any) {
+      console.error(chalk.red(`Error: ${e.message}`));
+    }
+  });
+
+program
+  .command("optimize-media <file>")
+  .description("Optimize oversized media/binary files to fit AI agent memory buffer budget")
+  .option("-m, --target-mb <num>", "Target maximum MB budget", "50")
+  .action(async (file, options) => {
+    console.log(chalk.cyan(`\n🎬 Optimizing large media / binary buffer: ${file}...`));
+    try {
+      const res = await runMediaOptimizer(file, parseInt(options.targetMb, 10));
+      console.log(chalk.green(`✔ File Type: ${res.file_type} (Status: ${res.status})`));
+      if (res.file_type === "VIDEO_MEDIA") {
+        console.log(chalk.green(`✔ Original Size: ${res.original_size_mb} MB | Target Budget: ${res.target_max_mb} MB`));
+        console.log(chalk.green(`✔ Optimized Video: ${res.optimized_file} (${res.optimized_size_mb} MB)`));
+        if (res.isolated_audio_track) {
+          console.log(chalk.yellow(`Isolated Audio Track: ${res.isolated_audio_track.path} (${res.isolated_audio_track.size_mb} MB)`));
+        }
+        if (res.extracted_keyframes_count) {
+          console.log(chalk.magenta(`Extracted Keyframes: ${res.extracted_keyframes_count} frames for visual inspection`));
+        }
+        if (res.storyboard_plan?.length) {
+          console.log(chalk.bold.white("\nStructured Storyboard Plan (Safe Typography Zones):"));
+          res.storyboard_plan.forEach(s => {
+            console.log(`  [Scene #${s.scene_index} @ ${s.timestamp_formatted}] Preview: ${s.frame_preview_path} -> Zone: ${s.recommended_typography_zone}`);
+          });
+        }
+      } else {
+        console.log(chalk.green(`✔ Size: ${res.file_size_mb} MB | Total mmap Chunks: ${res.total_chunks}`));
+        console.log(chalk.cyan(`Streamed Chunks Preview:`), res.streamed_chunks_preview);
+      }
+      console.log(chalk.dim(`\n${res.agent_guidance}`));
     } catch (e: any) {
       console.error(chalk.red(`Error: ${e.message}`));
     }

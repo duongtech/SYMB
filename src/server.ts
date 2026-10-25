@@ -16,7 +16,10 @@ import {
   ProtectionsScanInputSchema,
   DecompileApkInputSchema,
   DecryptStringsInputSchema,
-  DecompileIosInputSchema
+  DecompileIosInputSchema,
+  EntropyScanInputSchema,
+  XrefAnalysisInputSchema,
+  OptimizeMediaInputSchema
 } from "./contracts/schemas.js";
 import { runUnflatten } from "./core/unflatten.js";
 import { runBranchSolver } from "./core/solver.js";
@@ -30,6 +33,9 @@ import { runProtectionsScan } from "./core/protections.js";
 import { runApkDecompile } from "./core/apk.js";
 import { runStringDecrypt } from "./core/strings_decrypt.js";
 import { runIosDecompile } from "./core/ios.js";
+import { runEntropyScan } from "./core/entropy.js";
+import { runXrefAnalysis } from "./core/xref.js";
+import { runMediaOptimizer } from "./core/media_optimizer.js";
 
 export function createSymbServer(): Server {
   const server = new Server(
@@ -49,13 +55,51 @@ export function createSymbServer(): Server {
     return {
       tools: [
         {
-          name: "decompile_ios_ipa_package",
+          name: "optimize_large_media_buffer",
           description:
-            "Decompiles Apple iOS IPA packages and ARM64 Mach-O binaries. Audits Info.plist entitlements/permissions, checks FairPlay DRM encryption (cryptid), detects Anti-Jailbreak heuristics (Cydia, ptrace PT_DENY_ATTACH), and reconstructs Objective-C/Swift class interface headers.",
+            "Solves agent memory/context exhaustion for oversized media (video/audio) and large binary dumps (> 50MB). Auto-downsamples videos to agent budget, isolates audio tracks for transcription, extracts keyframes, and provides mmap streaming.",
           inputSchema: {
             type: "object",
             properties: {
-              target_path: { type: "string", description: "Absolute path to iOS IPA (.ipa) or ARM64 Mach-O executable" }
+              file_path: { type: "string", description: "Absolute path to media or binary file" },
+              target_max_mb: { type: "number", description: "Target max MB memory budget (default 50)" }
+            },
+            required: ["file_path"]
+          }
+        },
+        {
+          name: "scan_byte_entropy",
+          description:
+            "Calculates rolling Shannon entropy heatmap across any binary (PE, ELF, APK, Mach-O). Detects packed/encrypted payloads and outputs visual distribution histograms.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary" },
+              block_size: { type: "number", description: "Block size in bytes (default 512)" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "trace_binary_xrefs",
+          description:
+            "Traces whole-program call graph edges, indirect calls, resolved IAT/PLT stubs, and literal string cross-references (XREFs).",
+          inputSchema: {
+            type: "object",
+            properties: {
+              binary_path: { type: "string", description: "Absolute path to target binary (PE, ELF)" }
+            },
+            required: ["binary_path"]
+          }
+        },
+        {
+          name: "decompile_ios_ipa_package",
+          description:
+            "Decompiles Apple iOS IPA packages (.ipa) and ARM64 Mach-O executables. Audits FairPlay DRM (cryptid), Anti-Jailbreak heuristics, and reconstructs Objective-C / Swift interfaces.",
+          inputSchema: {
+            type: "object",
+            properties: {
+              target_path: { type: "string", description: "Absolute path to IPA or Mach-O" }
             },
             required: ["target_path"]
           }
@@ -63,12 +107,12 @@ export function createSymbServer(): Server {
         {
           name: "decompile_apk_package",
           description:
-            "Decompiles Android APK and DEX packages in milliseconds. Extracts AndroidManifest.xml permissions, activities, services, audits native .so binaries, and lifts Dalvik bytecode into clean Java class definitions.",
+            "5-Pass native Dalvik DEX decompiler. Audits permissions, keystore signature schemes (v1/v2/v3), CWE vulnerabilities, hardcoded secrets, and lifts Dalvik bytecode to Java classes.",
           inputSchema: {
             type: "object",
             properties: {
-              target_path: { type: "string", description: "Absolute path to APK package (.apk) or Dalvik executable (.dex)" },
-              max_classes: { type: "number", default: 15, description: "Maximum number of classes to lift into Java" }
+              target_path: { type: "string", description: "Absolute path to APK or DEX" },
+              max_classes: { type: "number", description: "Max classes to decompile" }
             },
             required: ["target_path"]
           }
@@ -76,12 +120,12 @@ export function createSymbServer(): Server {
         {
           name: "decrypt_obfuscated_strings",
           description:
-            "Automated string deobfuscation engine. Brute-forces and solves Single-byte XOR, Multi-byte cycling XOR, Additive Rolling Key XOR [i ^ (k + i)], and Base64-encoded strings across PE, ELF, APK, and .so binaries.",
+            "Automated string decryptor across raw binary sections. Recovers Single-byte XOR, Multi-byte cycling XOR, and Additive Rolling-Key XOR encrypted strings.",
           inputSchema: {
             type: "object",
             properties: {
               binary_path: { type: "string", description: "Absolute path to target binary" },
-              max_candidates: { type: "number", default: 20, description: "Maximum recovered candidates" }
+              max_candidates: { type: "number", description: "Max candidate decrypted strings" }
             },
             required: ["binary_path"]
           }
@@ -89,13 +133,13 @@ export function createSymbServer(): Server {
         {
           name: "decompile_native_function",
           description:
-            "Decompiles native machine code into clean C pseudocode in milliseconds (< 400ms). Disassembles basic blocks, extracts string references (.rdata/.rodata XREFs), resolves IAT/PLT symbols, and reconstructs branch conditions across Windows PE and Linux ELF.",
+            "High-speed machine code decompiler (< 400ms). Lifts x86/x64/ARM assembly into clean C pseudocode with branch conditions, string references, and IAT/PLT stub resolution.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string", description: "Absolute path to binary (PE/EXE, ELF, Mach-O)" },
-              function_address: { type: "string", description: "Function hex address (e.g. '0x4015f6') or entry point" },
-              max_instructions: { type: "number", default: 300, description: "Maximum instruction count to lift" }
+              binary_path: { type: "string", description: "Absolute path to binary" },
+              function_address: { type: "string", description: "Hex address or function symbol" },
+              max_instructions: { type: "number", description: "Instruction window limit" }
             },
             required: ["binary_path"]
           }
@@ -103,12 +147,12 @@ export function createSymbServer(): Server {
         {
           name: "decompile_entire_program",
           description:
-            "Automated whole-binary decompiler. Scans entry point, export tables (EAT), and function prologues across the binary to generate a unified, compilable C source code file with forward declarations and cross-referenced calls.",
+            "Whole-program C decompiler. Discovers function entry points and generates unified, compilable C source files with forward declarations.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string", description: "Absolute path to target binary" },
-              max_functions: { type: "number", default: 10, description: "Maximum number of discovered functions to decompile" }
+              binary_path: { type: "string", description: "Absolute path to binary" },
+              max_functions: { type: "number", description: "Max functions to decompile" }
             },
             required: ["binary_path"]
           }
@@ -116,11 +160,11 @@ export function createSymbServer(): Server {
         {
           name: "detect_binary_protections",
           description:
-            "Scans binary for protectors/packers (UPX, Themida, VMProtect, Enigma), Anti-Debugging APIs (IsDebuggerPresent, NtQueryInformationProcess, etc.), Anti-VM artifacts, and ASM timing traps (RDTSC, PEB direct read) with an automated security risk score.",
+            "Detects commercial packers (UPX, Themida, VMProtect, Enigma), Anti-Debugging APIs, Anti-VM heuristics, and RDTSC timing traps.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string", description: "Absolute path to target binary" }
+              binary_path: { type: "string", description: "Absolute path to binary" }
             },
             required: ["binary_path"]
           }
@@ -128,11 +172,11 @@ export function createSymbServer(): Server {
         {
           name: "inspect_binary_layout",
           description:
-            "Scans binary headers (PE/ELF), mitigations (ASLR, DEP/NX, SafeSEH, CFG), imported/exported DLL functions, and measures Shannon entropy per section to detect packing and encrypted payloads.",
+            "Scans PE/ELF headers, ASLR/DEP/SafeSEH mitigations, IAT/EAT exports, and measures Shannon entropy per section.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string", description: "Absolute path to target binary" }
+              binary_path: { type: "string", description: "Absolute path to binary" }
             },
             required: ["binary_path"]
           }
@@ -140,11 +184,11 @@ export function createSymbServer(): Server {
         {
           name: "detect_crypto_primitives",
           description:
-            "Scans binary bytes to detect cryptographic primitives, including AES S-Boxes, SHA-256 / MD5 constants, CRC32 tables, RC4 KSA loops, and ChaCha20 schedules for automated SMT inversion.",
+            "Scans for AES S-Boxes, SHA/MD5 constants, CRC32 tables, RC4 loops, and ChaCha schedules for SMT inversion.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string", description: "Absolute path to target binary" }
+              binary_path: { type: "string", description: "Absolute path to binary" }
             },
             required: ["binary_path"]
           }
@@ -152,13 +196,13 @@ export function createSymbServer(): Server {
         {
           name: "unflatten_control_flow",
           description:
-            "Symbolically unflatten OLLVM Control Flow Flattening (CFF). Eliminates dispatchers, resolves state variables, and reconstructs clean original CFG.",
+            "Symbolically deobfuscates OLLVM Control-Flow Flattening (CFF) state dispatchers and reconstructs clean linear basic blocks.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string", description: "Absolute path to target binary" },
-              function_address: { type: "string", description: "Hex address (e.g. '0x401500') or symbol" },
-              timeout_seconds: { type: "number", default: 60 }
+              binary_path: { type: "string", description: "Path to binary" },
+              function_address: { type: "string", description: "Hex address of flattened function" },
+              timeout_seconds: { type: "number", description: "Solver timeout" }
             },
             required: ["binary_path", "function_address"]
           }
@@ -166,18 +210,14 @@ export function createSymbServer(): Server {
         {
           name: "solve_branch_reachability",
           description:
-            "Uses angr and Z3 SMT Solver to find the exact byte sequence that drives execution to a target address (bypass check/keygen/exploit path).",
+            "Uses Z3 SMT Theorem Prover and angr to solve for exact concrete inputs reaching target branches while pruning failure paths.",
           inputSchema: {
             type: "object",
             properties: {
-              binary_path: { type: "string", description: "Absolute path to binary" },
-              target_address: { type: "string", description: "Target reachability hex address" },
-              avoid_addresses: {
-                type: "array",
-                items: { type: "string" },
-                description: "Array of failure hex addresses to prune"
-              },
-              input_length: { type: "number", default: 32 }
+              binary_path: { type: "string", description: "Path to binary" },
+              target_address: { type: "string", description: "Hex address of target block" },
+              avoid_addresses: { type: "array", items: { type: "string" }, description: "Pruned addresses" },
+              input_length: { type: "number", description: "Symbolic input length" }
             },
             required: ["binary_path", "target_address"]
           }
@@ -185,12 +225,12 @@ export function createSymbServer(): Server {
         {
           name: "trace_symbolic_taint",
           description:
-            "Traces memory and register data-flow dependencies from user input sources directly to critical execution sinks.",
+            "Symbolic dataflow taint analysis proving whether attacker-controlled inputs propagate to dangerous memory sinks.",
           inputSchema: {
             type: "object",
             properties: {
               binary_path: { type: "string", description: "Path to binary" },
-              source_symbol: { type: "string", description: "Input source symbol or entry point" },
+              source_symbol: { type: "string", description: "Input source symbol" },
               sink_symbol: { type: "string", description: "Vulnerable sink function" }
             },
             required: ["binary_path", "source_symbol", "sink_symbol"]
@@ -199,7 +239,7 @@ export function createSymbServer(): Server {
         {
           name: "hot_patch_live_memory",
           description:
-            "Injects atomic hot-patch memory trampolines into running processes without touching disk binaries or triggering file-integrity checks.",
+            "Injects atomic hot-patch memory trampolines into running processes without touching disk binaries.",
           inputSchema: {
             type: "object",
             properties: {
@@ -221,6 +261,30 @@ export function createSymbServer(): Server {
 
     try {
       switch (name) {
+        case "optimize_large_media_buffer": {
+          const parsed = OptimizeMediaInputSchema.parse(args);
+          const result = await runMediaOptimizer(parsed.file_path, parsed.target_max_mb);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case "scan_byte_entropy": {
+          const parsed = EntropyScanInputSchema.parse(args);
+          const result = await runEntropyScan(parsed.binary_path, parsed.block_size);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
+        case "trace_binary_xrefs": {
+          const parsed = XrefAnalysisInputSchema.parse(args);
+          const result = await runXrefAnalysis(parsed.binary_path);
+          return {
+            content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
+          };
+        }
+
         case "decompile_ios_ipa_package": {
           const parsed = DecompileIosInputSchema.parse(args);
           const result = await runIosDecompile(parsed.target_path);
@@ -259,10 +323,7 @@ export function createSymbServer(): Server {
 
         case "decompile_entire_program": {
           const parsed = DecompileProgramInputSchema.parse(args);
-          const result = await runDecompileProgram(
-            parsed.binary_path,
-            parsed.max_functions
-          );
+          const result = await runDecompileProgram(parsed.binary_path, parsed.max_functions);
           return {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
           };

@@ -62,3 +62,17 @@ export const DecryptStringsInputSchema = z.object({
 export const DecompileIosInputSchema = z.object({
   target_path: z.string().describe("Absolute path to Apple iOS IPA (.ipa) or 64-bit Mach-O executable")
 });
+
+export const EntropyScanInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to binary file"),
+  block_size: z.number().default(512).describe("Block size for Shannon entropy calculation (bytes)")
+});
+
+export const XrefAnalysisInputSchema = z.object({
+  binary_path: z.string().describe("Absolute path to target binary (PE, ELF)")
+});
+
+export const OptimizeMediaInputSchema = z.object({
+  file_path: z.string().describe("Absolute path to media (.mp4, .mov, etc.) or large binary dump"),
+  target_max_mb: z.number().default(50).describe("Target maximum MB budget for agent memory context")
+});

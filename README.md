@@ -158,7 +158,7 @@ npx symb-agents setup
 
 ## 🛠️ MCP Tool Reference
 
-SYMB implements 12 high-speed native reversing tools via standard MCP JSON-RPC:
+SYMB implements 15 high-speed native reversing tools via standard MCP JSON-RPC:
 
 | Tool Name | Key Arguments | Primary Capability |
 | :--- | :--- | :--- |
@@ -214,6 +214,9 @@ symb entropy ./examples/01_ollvm_cff/CFF_win64.exe
 
 # Trace whole-program call graph edges, indirect calls, and string XREFs
 symb xrefs ./examples/01_ollvm_cff/CFF_win64.exe
+
+# Optimize oversized media/video (> 50MB) or memory dumps to fit agent memory budget
+symb optimize-media ./examples/sample_video.mp4 --target-mb 50
 ```
 
 Detailed JSON schemas and response contracts are documented in [docs/mcp-contracts.md](docs/mcp-contracts.md).
