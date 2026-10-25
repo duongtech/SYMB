@@ -27,13 +27,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
+          cache-dependency-path: 'requirements.txt'
 
       - name: Install System Dependencies & Python Solvers
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ffmpeg libxml2-utils
           python -m pip install --upgrade pip
-          pip install z3-solver angr unicorn capstone
+          pip install -r requirements.txt
 
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
